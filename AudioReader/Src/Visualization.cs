@@ -17,7 +17,8 @@ namespace AudioReader
         private Queue<double> _maxVolume;
         private int _bassSamples = 10000;
         private Queue<double> _bassVolume;
-        private bool _beat = false;
+
+        #region WindowManagement
 
         public Visualization(float[] data) : base(2000, 1000)
         {
@@ -52,7 +53,9 @@ namespace AudioReader
             _setupWindow();
         }
 
-        #region helper
+        #endregion WindowManagement
+
+        #region Helper
 
         private static double Clamp(double value, double min, double max)
         {
@@ -80,7 +83,9 @@ namespace AudioReader
             return MapClamped(index, floor, ceiling, _getOffsettedValue(floor, offset), _getOffsettedValue(ceiling, offset));
         }
 
-        #endregion helper
+        #endregion Helper
+
+        #region Rendering
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
@@ -109,9 +114,7 @@ namespace AudioReader
 
             double[] sampleEdges = new double[_samplesPerChannel + 1];
             for (int i = 0; i <= _samplesPerChannel; i++)
-                sampleEdges[i] = (int)Math.Pow(b, i) - 1;
-
-            int offset = 0;
+                sampleEdges[i] = Math.Pow(b, i) - 1;
 
             GL.Begin(PrimitiveType.Lines);
             // max volume line
@@ -141,13 +144,11 @@ namespace AudioReader
                 if (left > maxVolume) maxVolume = left;
                 if (right > maxVolume) maxVolume = right;
 
-                GL.Vertex2(-(double)offset / _samplesPerChannel, left * valueFactor);
-                GL.Vertex2(-(double)(offset + 1) / _samplesPerChannel, left * valueFactor);
+                GL.Vertex2(-(double)i / _samplesPerChannel, left * valueFactor);
+                GL.Vertex2(-(double)(i + 1) / _samplesPerChannel, left * valueFactor);
 
-                GL.Vertex2((double)offset / _samplesPerChannel, right * valueFactor);
-                GL.Vertex2((double)(offset + 1) / _samplesPerChannel, right * valueFactor);
-
-                if (Math.Ceiling(end - start) > 0) offset++;
+                GL.Vertex2((double)i / _samplesPerChannel, right * valueFactor);
+                GL.Vertex2((double)(i + 1) / _samplesPerChannel, right * valueFactor);
             }
             GL.End();
 
@@ -157,5 +158,7 @@ namespace AudioReader
 
             SwapBuffers();
         }
+
+        #endregion Rendering
     }
 }
