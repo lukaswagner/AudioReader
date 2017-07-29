@@ -17,13 +17,8 @@ namespace AudioReader
         {
             _data = new float[2048];
 
-            IniParser.Load();
-
-            Dictionary<string, string> audioConfig = IniParser.GetSectionParameter("audio");
-            if (!audioConfig.TryGetValue("device", out string deviceId))
+            if(!Config.Get("audio/device", out string deviceId))
                 deviceId = _listDevices();
-
-            IniParser.Write("sec", "param", "val");
 
             while(!_setUpAudio(deviceId))
                 deviceId = _listDevices();
