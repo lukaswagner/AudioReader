@@ -12,6 +12,7 @@ namespace AudioReader
         private static float[] _data;
         private static bool _dataValid = false;
         private static Visualization _vis;
+        private static HueController _hueController;
 
         static void Main(string[] args)
         {
@@ -24,9 +25,10 @@ namespace AudioReader
                 deviceId = _listDevices();
 
             _vis = new Visualization(_data);
+            _hueController = new HueController(_vis);
             _vis.Run(60, 60);
 
-            Thread.Sleep(-1);
+            _hueController.TurnAllTheLightsOff();
         }
 
         private static string _listDevices()
