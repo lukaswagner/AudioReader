@@ -4,7 +4,6 @@ using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Timers;
 
 namespace AudioReader
 {
@@ -13,7 +12,7 @@ namespace AudioReader
         private float[] _data;
         private int _samplesPerChannel = 128;
         private int _entriesPerChannel;
-        private int _volumeSamples = 100; 
+        private int _volumeSamples = 100;
         private Queue<double> _maxVolume;
         private int _bassSamples = 1200;
         private Queue<double> _bassVolume;
@@ -106,7 +105,7 @@ namespace AudioReader
             if (_bassVolume.Count >= _bassSamples)
                 _bassVolume.Dequeue();
             _bassVolume.Enqueue(bassSum);
-            if(bassSum > _bassVolume.Average() * 1.5) GL.Color4(Color4.White);
+            if (bassSum > _bassVolume.Average() * 1.5) GL.Color4(Color4.White);
 
             // find base b so that b^(samples) = entries => logarithmic scaling on x-axis
             // b^(samples) = entries => b = samplest root of entries => b = entries^(1/samples)
