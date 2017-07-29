@@ -44,22 +44,11 @@ namespace AudioReader
 
             client = new LocalHueClient(ip);
 
-            Dictionary<string, string> hueKeyConfig = IniParser.GetSectionParameter("philips_hue");
-            if (!hueKeyConfig.TryGetValue("key", out _key))
-            {
+            //Dictionary<string, string> hueKeyConfig = IniParser.GetSectionParameter("philips_hue");
+            if (!Config.Get("philips_hue/key", out _key))
                 _key = client.RegisterAsync("mypersonalappname", "mydevicename").GetAwaiter().GetResult();
-                Console.WriteLine("new key = " + _key);
-            }
-            else
-                Console.WriteLine("key = " + _key);
-            _key = "BF2f0oKYa4yj0oheEf4KUQuSZTs5ASROmdTOE7nU";
-            client.Initialize(_key);
 
-            IEnumerable<Light> lights = client.GetLightsAsync().GetAwaiter().GetResult();
-            foreach (var light in lights)
-            {
-                Console.WriteLine(light.Name);
-            }
+            client.Initialize(_key);
 
             beatCommand = new LightCommand();
             beatCommand.Brightness = 255;
@@ -72,11 +61,6 @@ namespace AudioReader
             defaultCommand.Saturation = 255;
 
             groups = client.GetGroupsAsync().GetAwaiter().GetResult().Where((g) => g.Type == GroupType.Room);
-            foreach (var group in groups)
-            {
-                int index = rnd.Next(group.Lights.Count());
-                pulseLight(group.Lights[index]);
-            }
         }
 
         private void BeatDetected(object sender, EventArgs e)
