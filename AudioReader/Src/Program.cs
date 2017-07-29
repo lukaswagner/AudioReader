@@ -24,7 +24,7 @@ namespace AudioReader
                 deviceId = _listDevices();
 
             _vis = new Visualization(_data);
-            _vis.Run();
+            _vis.Run(60, 60);
 
             Thread.Sleep(-1);
         }
