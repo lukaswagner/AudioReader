@@ -15,17 +15,17 @@ namespace AudioReader
     class HueController
     {
         private string _key;
-        Random _rnd = new Random();
-        ILocalHueClient client;
-        IEnumerable<Group> groups;
+        private Random _rnd = new Random();
+        private ILocalHueClient _client;
+        private IEnumerable<Group> _groups;
 
-        bool _preserveColor;
+        private bool _preserveColor;
 
-        LightCommand beatCommand;
-        LightCommand defaultCommand;
+        private LightCommand _beatCommand;
+        private LightCommand _defaultCommand;
         public HueController(Visualization vis)
         {
-            vis.BeatDetected += new BeatEventHandler(BeatDetected);
+            vis.BeatDetected += new BeatEventHandler(_beatDetected);
 
             HttpBridgeLocator locator = new HttpBridgeLocator();
             IEnumerable<LocatedBridge> bridgeIPs = locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
@@ -46,46 +46,53 @@ namespace AudioReader
                     break;
             }
 
-            client = new LocalHueClient(ip);
+            _client = new LocalHueClient(ip);
 
             //Dictionary<string, string> hueKeyConfig = IniParser.GetSectionParameter("philips_hue");
             if (!Config.Get("philips_hue/key", out _key))
-                _key = client.RegisterAsync("mypersonalappname", "mydevicename").GetAwaiter().GetResult();
+                _key = _client.RegisterAsync("mypersonalappname", "mydevicename").GetAwaiter().GetResult();
 
-            client.Initialize(_key);
+            _client.Initialize(_key);
 
-            beatCommand = new LightCommand();
-            beatCommand.Brightness = 255;
-            beatCommand.TransitionTime = new TimeSpan(0);
-            beatCommand.Saturation = 200;
+            _beatCommand = new LightCommand();
+            _beatCommand.Brightness = 255;
+            _beatCommand.TransitionTime = new TimeSpan(0);
+            _beatCommand.Saturation = 200;
 
-            defaultCommand = new LightCommand();
-            defaultCommand.Brightness = 20;
-            defaultCommand.TransitionTime = new TimeSpan(0);
-            defaultCommand.Saturation = 255;
+            _defaultCommand = new LightCommand();
+            _defaultCommand.Brightness = 20;
+            _defaultCommand.TransitionTime = new TimeSpan(0);
+            _defaultCommand.Saturation = 255;
 
             string preserveColor;
             Config.Get("philips_hue/preserve_color", out preserveColor);
             _preserveColor = Convert.ToBoolean(preserveColor);
 
-            groups = client.GetGroupsAsync().GetAwaiter().GetResult().Where((g) => g.Type == GroupType.Room);
+            _groups = _client.GetGroupsAsync().GetAwaiter().GetResult().Where((g) => g.Type == GroupType.Room);
         }
 
-        private void BeatDetected(object sender, EventArgs e)
+        private void _beatDetected(object sender, EventArgs e)
         {
-            foreach (var group in groups)
+            foreach (var group in _groups)
             {
                 int index = _rnd.Next(group.Lights.Count());
-                pulseLight(group.Lights[index]);
+                _pulseLight(group.Lights[index]);
             }
         }
 
-        private async void pulseLight(string light)
+        private async void _pulseLight(string light)
         {
-            if(!_preserveColor) beatCommand.Hue = _rnd.Next(65535);
-            await client.SendCommandAsync(beatCommand, new List<string> { light });
+            if(!_preserveColor) _beatCommand.Hue = _rnd.Next(65535);
+            await _client.SendCommandAsync(_beatCommand, new List<string> { light });
             Thread.Sleep(5);
-            await client.SendCommandAsync(defaultCommand, new List<string> { light });
+            await _client.SendCommandAsync(_defaultCommand, new List<string> { light });
+        }
+
+        public void TurnAllTheLightsOff()
+        {
+            foreach (var group in _groups)
+                foreach (var light in group.Lights)
+                    _client.SendCommandAsync(_defaultCommand, new List<string> { light }).GetAwaiter().GetResult();
         }
     }
 }
