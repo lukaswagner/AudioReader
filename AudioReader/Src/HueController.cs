@@ -15,9 +15,7 @@ namespace AudioReader
     class HueController
     {
         private string _key;
-        private HttpBridgeLocator locator = new HttpBridgeLocator();
-        private string ip;
-        Random rnd = new Random();
+        Random _rnd = new Random();
         ILocalHueClient client;
         IEnumerable<Group> groups;
         LightCommand beatCommand;
@@ -25,7 +23,10 @@ namespace AudioReader
         public HueController(Visualization vis)
         {
             vis.BeatDetected += new BeatEventHandler(BeatDetected);
+
+            HttpBridgeLocator locator = new HttpBridgeLocator();
             IEnumerable<LocatedBridge> bridgeIPs = locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+            string ip;
             switch (bridgeIPs.Count())
             {
                 case 0:
@@ -67,7 +68,7 @@ namespace AudioReader
         {
             foreach (var group in groups)
             {
-                int index = rnd.Next(group.Lights.Count());
+                int index = _rnd.Next(group.Lights.Count());
                 pulseLight(group.Lights[index]);
             }
         }
