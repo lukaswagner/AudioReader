@@ -101,7 +101,7 @@ namespace AudioReader
             GL.UseProgram(program);
         }
 
-        #endregion
+        #endregion OpenGLSetup
 
         #region Helper
 
