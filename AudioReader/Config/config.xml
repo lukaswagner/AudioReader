@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<config>
+	<audio>
+		<device>9</device>
+	</audio>
+	<philips_hue>
+		<key>1234567890</key>
+	</philips_hue>
+</config>
