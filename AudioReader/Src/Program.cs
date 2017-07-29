@@ -20,7 +20,6 @@ namespace AudioReader
 
             IniParser.Load();
 
-            hueController = new HueController();
 
             Dictionary<string, string> audioConfig = IniParser.GetSectionParameter("audio");
             if (!audioConfig.TryGetValue("device", out string deviceId))
@@ -30,6 +29,7 @@ namespace AudioReader
                 deviceId = _listDevices();
 
             _vis = new Visualization(_data);
+            hueController = new HueController(_vis);
             _vis.Run();
 
             Thread.Sleep(-1);
