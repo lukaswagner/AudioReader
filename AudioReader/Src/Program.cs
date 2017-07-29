@@ -12,12 +12,15 @@ namespace AudioReader
         private static float[] _data;
         private static bool _dataValid = false;
         private static Visualization _vis;
+        private static HueController hueController;
 
         static void Main(string[] args)
         {
             _data = new float[2048];
 
             IniParser.Load();
+
+            hueController = new HueController();
 
             Dictionary<string, string> audioConfig = IniParser.GetSectionParameter("audio");
             if (!audioConfig.TryGetValue("device", out string deviceId))

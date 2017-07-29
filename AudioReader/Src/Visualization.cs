@@ -19,7 +19,7 @@ namespace AudioReader
 
         #region WindowManagement
 
-        public Visualization(float[] data) : base(2000, 1000)
+        public Visualization(float[] data) : base(200, 100)
         {
             _data = data;
             _entriesPerChannel = _data.Length / 2;
