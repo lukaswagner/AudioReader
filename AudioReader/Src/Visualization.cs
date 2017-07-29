@@ -1,31 +1,66 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Input;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Timers;
 
 namespace AudioReader
 {
+    public delegate void BeatEventHandler(object sender, EventArgs e);
     class Visualization : GameWindow
     {
+        public event BeatEventHandler BeatDetected;
+
         private float[] _data;
         private int _samplesPerChannel = 128;
         private int _entriesPerChannel;
-        private int _volumeSamples = 100; 
+        private int _volumeSamples = 100;
         private Queue<double> _maxVolume;
-        private int _bassSamples = 10000;
+        private int _bassSamples = 300;
         private Queue<double> _bassVolume;
+        private int _localBassSamples = 10;
+        private Queue<double> _localBassVolume;
+        private bool _newBeat = true;
+        private int _vertexShaderObject;
+        private int _fragmentShaderObject;
+        private int _shaderProgram;
+        private int _vertexBufferObject;
+        private int _colorBufferObject;
+        private int _elementBufferObject;
 
         #region WindowManagement
 
-        public Visualization(float[] data) : base(2000, 1000)
+        public Visualization(float[] data) : base(800, 600)
         {
+            Keyboard.KeyDown += Keyboard_KeyDown;
+
             _data = data;
             _entriesPerChannel = _data.Length / 2;
             _maxVolume = new Queue<double>();
             _bassVolume = new Queue<double>();
+            _localBassVolume = new Queue<double>();
+        }
+
+        protected virtual void OnBeatDetected(EventArgs e)
+        {
+            if (BeatDetected != null)
+                BeatDetected(this, e);
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+
+            using (StreamReader vs = new StreamReader("Shader/Simple/Simple.vert"))
+            using (StreamReader fs = new StreamReader("Shader/Simple/Simple.frag"))
+                CreateShaders(vs.ReadToEnd(), fs.ReadToEnd(), out _vertexShaderObject, out _fragmentShaderObject, out _shaderProgram);
+
+            _setupWindow();
+
+            GL.ClearColor(Color4.Black);
         }
 
         private void _setupWindow()
@@ -37,15 +72,6 @@ namespace AudioReader
             GL.Ortho(-1, 1, 0, 1, -0.1, 1);
         }
 
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
-
-            _setupWindow();
-
-            GL.ClearColor(Color4.Black);
-        }
-
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
@@ -54,6 +80,41 @@ namespace AudioReader
         }
 
         #endregion WindowManagement
+
+        #region OpenGLSetup
+
+        void CreateShaders(string vs, string fs, out int vertexObject, out int fragmentObject, out int program)
+        {
+            vertexObject = GL.CreateShader(ShaderType.VertexShader);
+            fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
+
+            // Compile vertex shader
+            GL.ShaderSource(vertexObject, vs);
+            GL.CompileShader(vertexObject);
+            GL.GetShaderInfoLog(vertexObject, out string info);
+            GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out int status_code);
+
+            if (status_code != 1)
+                throw new ApplicationException(info);
+
+            // Compile fragment shader
+            GL.ShaderSource(fragmentObject, fs);
+            GL.CompileShader(fragmentObject);
+            GL.GetShaderInfoLog(fragmentObject, out info);
+            GL.GetShader(fragmentObject, ShaderParameter.CompileStatus, out status_code);
+
+            if (status_code != 1)
+                throw new ApplicationException(info);
+
+            program = GL.CreateProgram();
+            GL.AttachShader(program, fragmentObject);
+            GL.AttachShader(program, vertexObject);
+
+            GL.LinkProgram(program);
+            GL.UseProgram(program);
+        }
+
+        #endregion OpenGLSetup
 
         #region Helper
 
@@ -85,6 +146,22 @@ namespace AudioReader
 
         #endregion Helper
 
+        #region Keyboard
+
+        void Keyboard_KeyDown(object sender, KeyboardKeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+                this.Exit();
+
+            if (e.Key == Key.F11)
+                if (this.WindowState == WindowState.Fullscreen)
+                    this.WindowState = WindowState.Normal;
+                else
+                    this.WindowState = WindowState.Fullscreen;
+        }
+
+        #endregion Keyboard
+
         #region Rendering
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -103,10 +180,26 @@ namespace AudioReader
             // bass detection
             double bassSum = 0;
             for (int i = 0; i < 10; i++) bassSum += _data[i];
+
             if (_bassVolume.Count >= _bassSamples)
                 _bassVolume.Dequeue();
             _bassVolume.Enqueue(bassSum);
-            if(bassSum > _bassVolume.Average() * 1.5) GL.Color4(Color4.White);
+
+            if (_localBassVolume.Count >= _localBassSamples)
+                _localBassVolume.Dequeue();
+            _localBassVolume.Enqueue(bassSum);
+
+            if (_localBassVolume.Average() > _bassVolume.Average() * 1.5)
+            {
+                if (_newBeat)
+                {
+                    OnBeatDetected(EventArgs.Empty);
+                    _newBeat = false;
+                }
+                GL.Color4(Color4.White);
+            }
+            else
+                _newBeat = true;
 
             // find base b so that b^(samples) = entries => logarithmic scaling on x-axis
             // b^(samples) = entries => b = samplest root of entries => b = entries^(1/samples)

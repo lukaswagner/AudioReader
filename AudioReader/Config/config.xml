@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<config>
+	<audio>
+		<device>1</device>
+	</audio>
+	<philips_hue>
+		<key>BF2f0oKYa4yj0oheEf4KUQuSZTs5ASROmdTOE7nU</key>
+		<preserve_color>false</preserve_color>
+	</philips_hue>
+</config>
