@@ -15,7 +15,7 @@ namespace AudioReader
         private int _entriesPerChannel;
         private int _volumeSamples = 100; 
         private Queue<double> _maxVolume;
-        private int _bassSamples = 10000;
+        private int _bassSamples = 1200;
         private Queue<double> _bassVolume;
 
         #region WindowManagement

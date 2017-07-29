@@ -18,7 +18,7 @@ namespace AudioReader
         static void Main(string[] args)
         {
 #if USE_CONST_DEVICE
-            int id_i = 7;
+            int id_i = 1;
 #else
             for (int i = 0; i < BassWasapi.BASS_WASAPI_GetDeviceCount(); i++)
             {
