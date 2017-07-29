@@ -147,7 +147,7 @@ namespace AudioReader
                     this.WindowState = WindowState.Fullscreen;
         }
 
-        #endregion
+        #endregion Keyboard
 
         #region Rendering
 
