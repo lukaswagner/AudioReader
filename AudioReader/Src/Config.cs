@@ -14,7 +14,7 @@ namespace AudioReader
         static Config()
         {
             _doc = new XmlDocument();
-            _doc.Load("config.xml");
+            _doc.Load("Config/config.xml");
         }
 
         public static bool Get(string property, out string value)
@@ -39,7 +39,7 @@ namespace AudioReader
 
             try
             {
-                File.WriteAllText("config.xml", Beautify(_doc));
+                File.WriteAllText("Config/config.xml", Beautify(_doc));
             }
             catch (Exception e)
             {
