@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using Un4seen.Bass;
-using Un4seen.Bass.Misc;
 using Un4seen.BassWasapi;
 
 namespace AudioReader
@@ -38,7 +37,7 @@ namespace AudioReader
             int deviceId_int = Int32.Parse(deviceId);
 
             _data = new float[2048];
-            
+
             BASS_WASAPI_DEVICEINFO devInfo = BassWasapi.BASS_WASAPI_GetDeviceInfo(deviceId_int);
             _callbackProcess = new WASAPIPROC(_callbackFunction);
 

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AudioReader
 {
@@ -23,7 +21,7 @@ namespace AudioReader
 
             string section = "";
 
-            foreach(string line in lines)
+            foreach (string line in lines)
             {
                 // section
                 if (line.StartsWith("["))
@@ -40,13 +38,13 @@ namespace AudioReader
                 // property
                 string[] split = line.Split('=');
 
-                if(split.Length != 2 || split[0].Length == 0 || split[1].Length == 0)
+                if (split.Length != 2 || split[0].Length == 0 || split[1].Length == 0)
                 {
                     Console.WriteLine("Invalid parameter in ini will be ignored: " + line);
                     continue;
                 }
 
-                if(section == "")
+                if (section == "")
                 {
                     Console.WriteLine("Cant set parameter without valid section: " + line);
                     continue;
