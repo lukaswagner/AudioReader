@@ -1,6 +1,7 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace AudioReader
         private float[] _data;
         private int _samplesPerChannel = 128;
         private int _entriesPerChannel;
-        private int _volumeSamples = 100; 
+        private int _volumeSamples = 100;
         private Queue<double> _maxVolume;
         private int _bassSamples = 10000;
         private Queue<double> _bassVolume;
@@ -22,6 +23,8 @@ namespace AudioReader
 
         public Visualization(float[] data) : base(2000, 1000)
         {
+            Keyboard.KeyDown += Keyboard_KeyDown;
+
             _data = data;
             _entriesPerChannel = _data.Length / 2;
             _maxVolume = new Queue<double>();
@@ -85,6 +88,22 @@ namespace AudioReader
 
         #endregion Helper
 
+        #region Keyboard
+
+        void Keyboard_KeyDown(object sender, KeyboardKeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+                this.Exit();
+
+            if (e.Key == Key.F11)
+                if (this.WindowState == WindowState.Fullscreen)
+                    this.WindowState = WindowState.Normal;
+                else
+                    this.WindowState = WindowState.Fullscreen;
+        }
+
+        #endregion
+
         #region Rendering
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -106,7 +125,7 @@ namespace AudioReader
             if (_bassVolume.Count >= _bassSamples)
                 _bassVolume.Dequeue();
             _bassVolume.Enqueue(bassSum);
-            if(bassSum > _bassVolume.Average() * 1.5) GL.Color4(Color4.White);
+            if (bassSum > _bassVolume.Average() * 1.5) GL.Color4(Color4.White);
 
             // find base b so that b^(samples) = entries => logarithmic scaling on x-axis
             // b^(samples) = entries => b = samplest root of entries => b = entries^(1/samples)
