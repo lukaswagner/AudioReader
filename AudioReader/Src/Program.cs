@@ -23,6 +23,8 @@ namespace AudioReader
             if (!audioConfig.TryGetValue("device", out string deviceId))
                 deviceId = _listDevices();
 
+            IniParser.Write("sec", "param", "val");
+
             while(!_setUpAudio(deviceId))
                 deviceId = _listDevices();
 
