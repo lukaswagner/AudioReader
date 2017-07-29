@@ -47,7 +47,7 @@ namespace AudioReader
             _say("BASS_WASAPI_Start done");
 
             _vis = new Visualization(_data);
-            _vis.Run();
+            _vis.Run(60, 60);
 
             Thread.Sleep(-1);
         }
