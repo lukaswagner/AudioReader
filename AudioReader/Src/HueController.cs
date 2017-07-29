@@ -18,6 +18,9 @@ namespace AudioReader
         Random _rnd = new Random();
         ILocalHueClient client;
         IEnumerable<Group> groups;
+
+        bool _preserveColor;
+
         LightCommand beatCommand;
         LightCommand defaultCommand;
         public HueController(Visualization vis)
@@ -61,6 +64,10 @@ namespace AudioReader
             defaultCommand.TransitionTime = new TimeSpan(0);
             defaultCommand.Saturation = 255;
 
+            string preserveColor;
+            Config.Get("philips_hue/preserve_color", out preserveColor);
+            _preserveColor = Convert.ToBoolean(preserveColor);
+
             groups = client.GetGroupsAsync().GetAwaiter().GetResult().Where((g) => g.Type == GroupType.Room);
         }
 
@@ -75,6 +82,7 @@ namespace AudioReader
 
         private async void pulseLight(string light)
         {
+            if(!_preserveColor) beatCommand.Hue = _rnd.Next(65535);
             await client.SendCommandAsync(beatCommand, new List<string> { light });
             Thread.Sleep(5);
             await client.SendCommandAsync(defaultCommand, new List<string> { light });
