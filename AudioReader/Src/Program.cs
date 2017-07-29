@@ -26,7 +26,7 @@ namespace AudioReader
 
             _vis = new Visualization(_data);
             _hueController = new HueController(_vis);
-            _vis.Run();
+            _vis.Run(60, 60);
 
             _hueController.TurnAllTheLightsOff();
         }
