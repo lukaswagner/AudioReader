@@ -75,18 +75,14 @@
     <None Include="App.config" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
-    <None Include="Shader\Simple\Simple.frag">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Shader\Simple\Simple.vert">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Config\config.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
+    <PreBuildEvent>xcopy $(ProjectDir)Shader\* Shader\ /y /s</PreBuildEvent>
     <PostBuildEvent>xcopy $(ProjectDir)Libraries\Bass\Native\* /y</PostBuildEvent>
   </PropertyGroup>
 </Project>
