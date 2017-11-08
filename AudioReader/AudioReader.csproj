@@ -34,7 +34,7 @@
   <ItemGroup>
     <Reference Include="Bass.Net, Version=2.4.12.6, Culture=neutral, PublicKeyToken=b7566c273e6ef480, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>Libraries\NET\Bass.Net.dll</HintPath>
+      <HintPath>Libraries\Bass\NET\Bass.Net.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -64,6 +64,16 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
   </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <Reference Include="eDmx.ArtNet">
+      <HintPath>Libraries\Artnet.Net\eDmx.ArtNet_d.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <Reference Include="eDmx.ArtNet">
+      <HintPath>Libraries\Artnet.Net\eDmx.ArtNet.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="Src\HueController.cs" />
     <Compile Include="Src\Config.cs" />
@@ -75,18 +85,14 @@
     <None Include="App.config" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
-    <None Include="Shader\Simple\Simple.frag">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Shader\Simple\Simple.vert">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Config\config.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy $(ProjectDir)Libraries\Native\* /y</PostBuildEvent>
+    <PreBuildEvent>xcopy $(ProjectDir)Shader\* Shader\ /y /s</PreBuildEvent>
+    <PostBuildEvent>xcopy $(ProjectDir)Libraries\Bass\Native\* /y</PostBuildEvent>
   </PropertyGroup>
 </Project>
