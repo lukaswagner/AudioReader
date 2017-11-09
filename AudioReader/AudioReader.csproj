@@ -66,12 +66,12 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == 'Debug'">
     <Reference Include="eDmx.ArtNet">
-      <HintPath>Libraries\Artnet.Net\eDmx.ArtNet_d.dll</HintPath>
+      <HintPath>Libraries\Artnet.Net\Debug\eDmx.ArtNet.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == 'Release'">
     <Reference Include="eDmx.ArtNet">
-      <HintPath>Libraries\Artnet.Net\eDmx.ArtNet.dll</HintPath>
+      <HintPath>Libraries\Artnet.Net\Release\eDmx.ArtNet.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
