@@ -48,7 +48,7 @@ namespace AudioReader
         public DateTime StartTime = DateTime.Now;
         public DateTime Time = DateTime.Now;
         public Vec2d Mouse = new Vec2d(0.5, 0.5);
-        public Vec2d ScreenSize = new Vec2d(0, 0);
+        public Vec2i ScreenSize = new Vec2i(0, 0);
 
         private Parameters() { }
 
@@ -163,7 +163,7 @@ namespace AudioReader
             // Create vertex buffer (2 triangles)
             GL.CreateBuffers(1, out _triangleBuffer);
             GL.BindBuffer(BufferTarget.ArrayBuffer, _triangleBuffer);
-            GL.BufferData(BufferTarget.ArrayBuffer, 12, new double[] { -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0 }, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, 12, new float[] { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f }, BufferUsageHint.StaticDraw);
             // Create surface buffer (coordinates at screen corners)
             GL.CreateBuffers(1, out _surface.Buffer);
         }
@@ -250,6 +250,28 @@ namespace AudioReader
             program.UniformLocations[label] = GL.GetUniformLocation(program.Id, label);
         }
 
+        void ComputeSurfaceCorners()
+        {
+            _surface.Size.X = _surface.Size.Y * _parameters.ScreenSize.X / (double)_parameters.ScreenSize.Y;
+            double halfWidth = _surface.Size.X * 0.5;
+            double halfHeight = _surface.Size.Y * 0.5;
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _surface.Buffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, 12, new float[] {
+                (float)(_surface.Center.X - halfWidth), (float)(_surface.Center.Y - halfHeight),
+                (float)(_surface.Center.X + halfWidth), (float)(_surface.Center.Y - halfHeight),
+                (float)(_surface.Center.X - halfWidth), (float)(_surface.Center.Y + halfHeight),
+                (float)(_surface.Center.X + halfWidth), (float)(_surface.Center.Y - halfHeight),
+                (float)(_surface.Center.X + halfWidth), (float)(_surface.Center.Y + halfHeight),
+                (float)(_surface.Center.X - halfWidth), (float)(_surface.Center.Y + halfHeight) }, BufferUsageHint.StaticDraw);
+        }
+
+        void ResetSurface()
+        {
+            _surface.Center = new Vec2d(0, 0);
+            _surface.Size.X = 1;
+            ComputeSurfaceCorners();
+        }
+
         #endregion OpenGL
 
         #region Helper
@@ -302,9 +324,8 @@ namespace AudioReader
 
         void Mouse_ButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // TODO: enable once resetSurface is implemented
-            //if (Keyboard.GetState().IsKeyDown(Key.LShift))
-            //    resetSurface();
+            if (Keyboard.GetState().IsKeyDown(Key.LShift))
+                ResetSurface();
             if (e.Button == MouseButton.Left)
                 _surface.IsPanning = true;
             else
@@ -349,8 +370,7 @@ namespace AudioReader
 
             _surface.Last.X = clientX;
             _surface.Last.Y = clientY;
-            // TODO: enable once computeSurfaceCorners is implemented
-            //couputeSurfaceCorners();
+            ComputeSurfaceCorners();
         }
 
         void Mouse_Leave(object sender, EventArgs e)
