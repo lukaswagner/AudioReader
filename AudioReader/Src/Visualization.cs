@@ -49,6 +49,7 @@ namespace AudioReader
         public bool IsPanning = false;
         public bool IsZooming = false;
         public Vec2d Last = new Vec2d(0, 0);
+        public int Buffer;
 
         private Surface() { }
 
@@ -80,6 +81,7 @@ namespace AudioReader
         // for running GLSL Sandbox Shaders
         private Parameters _parameters = Parameters.GetInstance();
         private Surface _surface = Surface.GetInstance();
+        private int _triangleBuffer;
 
         #region WindowManagement
 
@@ -132,6 +134,16 @@ namespace AudioReader
         #endregion WindowManagement
 
         #region OpenGLSetup
+
+        void InitializeBuffers()
+        {
+            // Create vertex buffer (2 triangles)
+            GL.CreateBuffers(1, out _triangleBuffer);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _triangleBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, 12, new double[] { -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0 }, BufferUsageHint.StaticDraw);
+            // Create surface buffer (coordinates at screen corners)
+            GL.CreateBuffers(1, out _surface.Buffer);
+        }
 
         void CreateShaders(string vs, string fs, out int vertexObject, out int fragmentObject, out int program)
         {
