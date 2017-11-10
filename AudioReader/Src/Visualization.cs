@@ -25,7 +25,7 @@ namespace AudioReader
 
     class Parameters
     {
-        private Parameters _instance = null;
+        private static Parameters _instance = null;
         public DateTime StartTime = DateTime.Now;
         public DateTime Time = DateTime.Now;
         public Vec2d Mouse = new Vec2d(0.5, 0.5);
@@ -33,7 +33,7 @@ namespace AudioReader
 
         private Parameters() { }
 
-        public Parameters GetInstance()
+        public static Parameters GetInstance()
         {
             if (_instance == null)
                 _instance = new Parameters();
@@ -43,7 +43,7 @@ namespace AudioReader
 
     class Surface
     {
-        private Surface _instance;
+        private static Surface _instance;
         public Vec2d Center = new Vec2d(0, 0);
         public Vec2d Size = new Vec2d(1, 1);
         public bool IsPanning = false;
@@ -52,7 +52,7 @@ namespace AudioReader
 
         private Surface() { }
 
-        public Surface GetInstance()
+        public static Surface GetInstance()
         {
             if (_instance == null)
                 _instance = new Surface();
@@ -77,6 +77,9 @@ namespace AudioReader
         private int _vertexShaderObject;
         private int _fragmentShaderObject;
         private int _shaderProgram;
+        // for running GLSL Sandbox Shaders
+        private Parameters _parameters = Parameters.GetInstance();
+        private Surface _surface = Surface.GetInstance();
 
         #region WindowManagement
 
