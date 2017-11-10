@@ -11,15 +11,25 @@ namespace AudioReader
 {
     public delegate void BeatEventHandler(object sender, EventArgs e);
 
+    struct Vec2d
+    {
+        public double X;
+        public double Y;
+
+        public Vec2d(double x, double y)
+        {
+            X = x;
+            Y = y;
+        }
+    }
+
     class Parameters
     {
         private Parameters _instance = null;
         public DateTime StartTime = DateTime.Now;
         public DateTime Time = DateTime.Now;
-        public double MouseX = 0.5;
-        public double MouseY = 0.5;
-        public double ScreenWidth = 0;
-        public double ScreenHeight = 0;
+        public Vec2d Mouse = new Vec2d(0.5, 0.5);
+        public Vec2d ScreenSize = new Vec2d(0, 0);
 
         private Parameters() { }
 
@@ -34,14 +44,11 @@ namespace AudioReader
     class Surface
     {
         private Surface _instance;
-        public double CenterX = 0;
-        public double CenterY = 0;
-        public double Width = 1;
-        public double Height = 1;
+        public Vec2d Center = new Vec2d(0, 0);
+        public Vec2d Size = new Vec2d(1, 1);
         public bool IsPanning = false;
         public bool IsZooming = false;
-        public double LastX = 0;
-        public double LastY = 0;
+        public Vec2d Last = new Vec2d(0, 0);
 
         private Surface() { }
 
