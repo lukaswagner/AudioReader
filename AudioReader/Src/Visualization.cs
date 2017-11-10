@@ -88,8 +88,6 @@ namespace AudioReader
         private int _localBassSamples = 10;
         private Queue<double> _localBassVolume;
         private bool _newBeat = true;
-        private int _vertexShaderObject;
-        private int _fragmentShaderObject;
         private int _shaderProgram;
         // for running GLSL Sandbox Shaders
         private Parameters _parameters = Parameters.GetInstance();
@@ -125,7 +123,7 @@ namespace AudioReader
 
             using (StreamReader vs = new StreamReader("Shader/Simple/Simple.vert"))
             using (StreamReader fs = new StreamReader("Shader/Simple/Simple.frag"))
-                CreateShaders(vs.ReadToEnd(), fs.ReadToEnd(), out _vertexShaderObject, out _fragmentShaderObject, out _shaderProgram);
+                CreateShaders(vs.ReadToEnd(), fs.ReadToEnd(), out _shaderProgram);
 
             _setupWindow();
 
@@ -162,10 +160,10 @@ namespace AudioReader
             GL.CreateBuffers(1, out _surface.Buffer);
         }
 
-        void CreateShaders(string vs, string fs, out int vertexObject, out int fragmentObject, out int program)
+        void CreateShaders(string vs, string fs, out int program)
         {
-            vertexObject = GL.CreateShader(ShaderType.VertexShader);
-            fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
+            int vertexObject = GL.CreateShader(ShaderType.VertexShader);
+            int fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
 
             // Compile vertex shader
             GL.ShaderSource(vertexObject, vs);
@@ -186,8 +184,11 @@ namespace AudioReader
                 throw new ApplicationException(info);
 
             program = GL.CreateProgram();
-            GL.AttachShader(program, fragmentObject);
             GL.AttachShader(program, vertexObject);
+            GL.AttachShader(program, fragmentObject);
+
+            GL.DeleteShader(vertexObject);
+            GL.DeleteShader(fragmentObject);
 
             GL.LinkProgram(program);
             GL.UseProgram(program);
