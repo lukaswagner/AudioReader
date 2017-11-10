@@ -23,6 +23,18 @@ namespace AudioReader
         }
     }
 
+    struct Vec2i
+    {
+        public int X;
+        public int Y;
+
+        public Vec2i(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+    }
+
     class Parameters
     {
         private static Parameters _instance = null;
@@ -48,7 +60,8 @@ namespace AudioReader
         public Vec2d Size = new Vec2d(1, 1);
         public bool IsPanning = false;
         public bool IsZooming = false;
-        public Vec2d Last = new Vec2d(0, 0);
+        public Vec2i Last = new Vec2i(0, 0);
+        public Vec2i ClientLast = new Vec2i(0, 0);
         public int Buffer;
 
         private Surface() { }
@@ -88,6 +101,10 @@ namespace AudioReader
         public Visualization(float[] data) : base(800, 600)
         {
             Keyboard.KeyDown += Keyboard_KeyDown;
+            Mouse.ButtonDown += Mouse_ButtonDown;
+            Mouse.ButtonUp += Mouse_ButtonUp;
+            Mouse.Move += Mouse_Move;
+            MouseLeave += Mouse_Leave;
 
             _data = data;
             _entriesPerChannel = _data.Length / 2;
@@ -223,6 +240,69 @@ namespace AudioReader
         }
 
         #endregion Keyboard
+
+        #region Mouse
+
+        void Mouse_ButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // TODO: enable once resetSurface is implemented
+            //if (Keyboard.GetState().IsKeyDown(Key.LShift))
+            //    resetSurface();
+            if (e.Button == MouseButton.Left)
+                _surface.IsPanning = true;
+            else
+                _surface.IsZooming = true;
+
+            _surface.Last.X = e.X;
+            _surface.Last.Y = e.Y;
+        }
+
+        void Mouse_ButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            _surface.IsPanning = false;
+            _surface.IsZooming = false;
+        }
+
+        void Mouse_Move(object sender, MouseMoveEventArgs e)
+        {
+            int clientX = e.X;
+            int clientY = e.Y;
+
+            if (_surface.ClientLast.X == clientX && _surface.ClientLast.Y == clientY)
+                return;
+
+            _surface.ClientLast.X = clientX;
+            _surface.ClientLast.Y = clientY;
+
+            int dx = clientX - _surface.Last.X;
+            int dy = clientY - _surface.Last.Y;
+
+            _parameters.Mouse.X = clientX / (double)Width;
+            _parameters.Mouse.Y = clientY / (double)Height;
+
+            if (_surface.IsPanning)
+            {
+                _surface.Center.X -= dx * _surface.Size.X / (double)Width;
+                _surface.Center.Y -= dy * _surface.Size.Y / (double)Height;
+            }
+            else if (_surface.IsZooming)
+            {
+                _surface.Size.Y *= Math.Pow(0.997, dx + dy);
+            }
+
+            _surface.Last.X = clientX;
+            _surface.Last.Y = clientY;
+            // TODO: enable once computeSurfaceCorners is implemented
+            //couputeSurfaceCorners();
+        }
+
+        void Mouse_Leave(object sender, EventArgs e)
+        {
+            _surface.IsPanning = false;
+            _surface.IsZooming = false;
+        }
+
+        #endregion Mouse
 
         #region Rendering
 
