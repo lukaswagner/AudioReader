@@ -10,6 +10,49 @@ using System.Linq;
 namespace AudioReader
 {
     public delegate void BeatEventHandler(object sender, EventArgs e);
+
+    class Parameters
+    {
+        private Parameters _instance = null;
+        public DateTime StartTime = DateTime.Now;
+        public DateTime Time = DateTime.Now;
+        public double MouseX = 0.5;
+        public double MouseY = 0.5;
+        public double ScreenWidth = 0;
+        public double ScreenHeight = 0;
+
+        private Parameters() { }
+
+        public Parameters GetInstance()
+        {
+            if (_instance == null)
+                _instance = new Parameters();
+            return _instance;
+        }
+    }
+
+    class Surface
+    {
+        private Surface _instance;
+        public double CenterX = 0;
+        public double CenterY = 0;
+        public double Width = 1;
+        public double Height = 1;
+        public bool IsPanning = false;
+        public bool IsZooming = false;
+        public double LastX = 0;
+        public double LastY = 0;
+
+        private Surface() { }
+
+        public Surface GetInstance()
+        {
+            if (_instance == null)
+                _instance = new Surface();
+            return _instance;
+        }
+    }
+
     class Visualization : GameWindow
     {
         public event BeatEventHandler BeatDetected;
