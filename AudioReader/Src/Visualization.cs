@@ -77,9 +77,6 @@ namespace AudioReader
         private int _vertexShaderObject;
         private int _fragmentShaderObject;
         private int _shaderProgram;
-        private int _vertexBufferObject;
-        private int _colorBufferObject;
-        private int _elementBufferObject;
 
         #region WindowManagement
 
