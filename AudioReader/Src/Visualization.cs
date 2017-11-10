@@ -35,6 +35,13 @@ namespace AudioReader
         }
     }
 
+    class Program
+    {
+        public int Id;
+        public Dictionary<String, int> UniformLocations = new Dictionary<string, int>();
+        public int VertexPosition;
+    }
+
     class Parameters
     {
         private static Parameters _instance = null;
@@ -88,11 +95,12 @@ namespace AudioReader
         private int _localBassSamples = 10;
         private Queue<double> _localBassVolume;
         private bool _newBeat = true;
-        private int _shaderProgram;
         // for running GLSL Sandbox Shaders
         private Parameters _parameters = Parameters.GetInstance();
         private Surface _surface = Surface.GetInstance();
         private int _triangleBuffer;
+        private Program _screenProgram;
+        private Program _currentProgram;
 
         #region WindowManagement
 
@@ -148,7 +156,7 @@ namespace AudioReader
 
         #endregion WindowManagement
 
-        #region OpenGLSetup
+        #region OpenGL
 
         void InitializeBuffers()
         {
@@ -158,6 +166,49 @@ namespace AudioReader
             GL.BufferData(BufferTarget.ArrayBuffer, 12, new double[] { -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0 }, BufferUsageHint.StaticDraw);
             // Create surface buffer (coordinates at screen corners)
             GL.CreateBuffers(1, out _surface.Buffer);
+        }
+
+        void CompileScreenProgram()
+        {
+            using (StreamReader vs = new StreamReader("Shader/ScreenShader/ScreenShader.vert"))
+            using (StreamReader fs = new StreamReader("Shader/ScreenShader/ScreenShader.frag"))
+            {
+                int vertexObject = GL.CreateShader(ShaderType.VertexShader);
+                int fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
+
+                // Compile vertex shader
+                GL.ShaderSource(vertexObject, vs.ReadToEnd());
+                GL.CompileShader(vertexObject);
+                GL.GetShaderInfoLog(vertexObject, out string info);
+                GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out int status_code);
+
+                if (status_code != 1)
+                    throw new ApplicationException(info);
+
+                // Compile fragment shader
+                GL.ShaderSource(fragmentObject, fs.ReadToEnd());
+                GL.CompileShader(fragmentObject);
+                GL.GetShaderInfoLog(fragmentObject, out info);
+                GL.GetShader(fragmentObject, ShaderParameter.CompileStatus, out status_code);
+
+                if (status_code != 1)
+                    throw new ApplicationException(info);
+
+                int program = GL.CreateProgram();
+                GL.AttachShader(program, vertexObject);
+                GL.AttachShader(program, fragmentObject);
+                GL.LinkProgram(program);
+
+                GL.DeleteShader(vertexObject);
+                GL.DeleteShader(fragmentObject);
+
+                _screenProgram.Id = program;
+                GL.UseProgram(program);
+                CacheUniformLocation(_screenProgram, "resolution");
+                CacheUniformLocation(_screenProgram, "texture");
+                _screenProgram.VertexPosition = GL.GetAttribLocation(program, "position");
+                GL.EnableVertexAttribArray(_screenProgram.VertexPosition);
+            }
         }
 
         void CreateShaders(string vs, string fs, out int program)
@@ -194,7 +245,12 @@ namespace AudioReader
             GL.UseProgram(program);
         }
 
-        #endregion OpenGLSetup
+        void CacheUniformLocation(Program program, String label)
+        {
+            program.UniformLocations[label] = GL.GetUniformLocation(program.Id, label);
+        }
+
+        #endregion OpenGL
 
         #region Helper
 
