@@ -176,10 +176,8 @@ namespace AudioReader
             
             _screenProgram.Id = program;
             GL.UseProgram(program);
-            CacheUniformLocation(_screenProgram, "resolution");
-            CacheUniformLocation(_screenProgram, "texture");
-
-            CacheAttributeLocation(_screenProgram, "position");
+            CacheUniformLocations(_screenProgram, new string[] { "resolution", "texture" });
+            CacheAttributeLocations(_screenProgram, new string[] { "position" });
             GL.EnableVertexAttribArray(_screenProgram.AttributeLocations["position"]);
         }
 
@@ -191,14 +189,9 @@ namespace AudioReader
                 GL.DeleteProgram(_currentProgram.Id);
 
             _currentProgram.Id = program;
-            CacheUniformLocation(_currentProgram, "time");
-            CacheUniformLocation(_currentProgram, "mouse");
-            CacheUniformLocation(_currentProgram, "resolution");
-            CacheUniformLocation(_currentProgram, "backbuffer");
-            CacheUniformLocation(_currentProgram, "surfaceSize");
             GL.UseProgram(program);
-            CacheAttributeLocation(_currentProgram, "surfacePosAttrib");
-            CacheAttributeLocation(_currentProgram, "position");
+            CacheUniformLocations(_screenProgram, new string[] { "time", "mouse", "resolution", "backbuffer", "surfaceSize" });
+            CacheAttributeLocations(_screenProgram, new string[] { "surfacePosAttrib", "position" });
             GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["surfacePosAttrib"]);
             GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["position"]);
         }
@@ -243,14 +236,16 @@ namespace AudioReader
             return program;
         }
 
-        void CacheUniformLocation(Program program, string label)
+        void CacheUniformLocations(Program program, string[] labels)
         {
-            program.UniformLocations[label] = GL.GetUniformLocation(program.Id, label);
+            foreach(string label in labels)
+                program.UniformLocations[label] = GL.GetUniformLocation(program.Id, label);
         }
 
-        void CacheAttributeLocation(Program program, string label)
+        void CacheAttributeLocations(Program program, string[] labels)
         {
-            program.AttributeLocations[label] = GL.GetAttribLocation(program.Id, label);
+            foreach (string label in labels)
+                program.AttributeLocations[label] = GL.GetAttribLocation(program.Id, label);
         }
 
         void ComputeSurfaceCorners()
