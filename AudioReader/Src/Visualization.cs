@@ -9,6 +9,8 @@ using System.Linq;
 
 namespace AudioReader
 {
+    #region HelperClasses
+
     public delegate void BeatEventHandler(object sender, EventArgs e);
 
     struct Vec2d
@@ -39,7 +41,7 @@ namespace AudioReader
     {
         public int Id;
         public Dictionary<String, int> UniformLocations = new Dictionary<string, int>();
-        public int VertexPosition;
+        public Dictionary<String, int> AttributeLocations = new Dictionary<string, int>();
     }
 
     class Parameters
@@ -80,6 +82,8 @@ namespace AudioReader
             return _instance;
         }
     }
+
+    #endregion HelperClasses
 
     class Visualization : GameWindow
     {
@@ -128,10 +132,8 @@ namespace AudioReader
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-
-            using (StreamReader vs = new StreamReader("Shader/Simple/Simple.vert"))
-            using (StreamReader fs = new StreamReader("Shader/Simple/Simple.frag"))
-                CreateShaders(vs.ReadToEnd(), fs.ReadToEnd(), out _shaderProgram);
+            
+            Compile("Shader/GlslSandbox/Example.frag");
 
             _setupWindow();
 
@@ -170,8 +172,8 @@ namespace AudioReader
 
         void CompileScreenProgram()
         {
-            using (StreamReader vs = new StreamReader("Shader/ScreenShader/ScreenShader.vert"))
-            using (StreamReader fs = new StreamReader("Shader/ScreenShader/ScreenShader.frag"))
+            using (StreamReader vs = new StreamReader("Shader/GlslSandboxFramework/ScreenShader.vert"))
+            using (StreamReader fs = new StreamReader("Shader/GlslSandboxFramework/ScreenShader.frag"))
             {
                 int vertexObject = GL.CreateShader(ShaderType.VertexShader);
                 int fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
@@ -206,48 +208,71 @@ namespace AudioReader
                 GL.UseProgram(program);
                 CacheUniformLocation(_screenProgram, "resolution");
                 CacheUniformLocation(_screenProgram, "texture");
-                _screenProgram.VertexPosition = GL.GetAttribLocation(program, "position");
-                GL.EnableVertexAttribArray(_screenProgram.VertexPosition);
+
+                CacheAttributeLocation(_screenProgram, "position");
+                GL.EnableVertexAttribArray(_screenProgram.AttributeLocations["position"]);
             }
         }
 
-        void CreateShaders(string vs, string fs, out int program)
+        void Compile(string fsPath)
         {
-            int vertexObject = GL.CreateShader(ShaderType.VertexShader);
-            int fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
+            using (StreamReader vs = new StreamReader("Shader/GlslSandboxFramework/ScreenShader.vert"))
+            using (StreamReader fs = new StreamReader(fsPath))
+            {
+                int vertexObject = GL.CreateShader(ShaderType.VertexShader);
+                int fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
 
-            // Compile vertex shader
-            GL.ShaderSource(vertexObject, vs);
-            GL.CompileShader(vertexObject);
-            GL.GetShaderInfoLog(vertexObject, out string info);
-            GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out int status_code);
+                // Compile vertex shader
+                GL.ShaderSource(vertexObject, vs.ReadToEnd());
+                GL.CompileShader(vertexObject);
+                GL.GetShaderInfoLog(vertexObject, out string info);
+                GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out int status_code);
 
-            if (status_code != 1)
-                throw new ApplicationException(info);
+                if (status_code != 1)
+                    throw new ApplicationException(info);
 
-            // Compile fragment shader
-            GL.ShaderSource(fragmentObject, fs);
-            GL.CompileShader(fragmentObject);
-            GL.GetShaderInfoLog(fragmentObject, out info);
-            GL.GetShader(fragmentObject, ShaderParameter.CompileStatus, out status_code);
+                // Compile fragment shader
+                GL.ShaderSource(fragmentObject, fs.ReadToEnd());
+                GL.CompileShader(fragmentObject);
+                GL.GetShaderInfoLog(fragmentObject, out info);
+                GL.GetShader(fragmentObject, ShaderParameter.CompileStatus, out status_code);
 
-            if (status_code != 1)
-                throw new ApplicationException(info);
+                if (status_code != 1)
+                    throw new ApplicationException(info);
 
-            program = GL.CreateProgram();
-            GL.AttachShader(program, vertexObject);
-            GL.AttachShader(program, fragmentObject);
+                int program = GL.CreateProgram();
+                GL.AttachShader(program, vertexObject);
+                GL.AttachShader(program, fragmentObject);
+                GL.LinkProgram(program);
 
-            GL.DeleteShader(vertexObject);
-            GL.DeleteShader(fragmentObject);
+                GL.DeleteShader(vertexObject);
+                GL.DeleteShader(fragmentObject);
 
-            GL.LinkProgram(program);
-            GL.UseProgram(program);
+                if (_currentProgram.Id > 0)
+                    GL.DeleteProgram(_currentProgram.Id);
+
+                _currentProgram.Id = program;
+                CacheUniformLocation(_currentProgram, "time");
+                CacheUniformLocation(_currentProgram, "mouse");
+                CacheUniformLocation(_currentProgram, "resolution");
+                CacheUniformLocation(_currentProgram, "backbuffer");
+                CacheUniformLocation(_currentProgram, "surfaceSize");
+                GL.UseProgram(program);
+                CacheAttributeLocation(_currentProgram, "surfacePosAttrib");
+                CacheAttributeLocation(_currentProgram, "position");
+                GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["surfacePosAttrib"]);
+                GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["position"]);
+            }
         }
 
         void CacheUniformLocation(Program program, String label)
         {
             program.UniformLocations[label] = GL.GetUniformLocation(program.Id, label);
+        }
+
+        void CacheAttributeLocation(Program program, String label)
+        {
+            program.AttributeLocations[label] = GL.GetAttribLocation(program.Id, label);
         }
 
         void ComputeSurfaceCorners()
