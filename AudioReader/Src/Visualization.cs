@@ -83,6 +83,20 @@ namespace AudioReader
         }
     }
 
+    class Target
+    {
+        public int Framebuffer;
+        public int Renderbuffer;
+        public int Texture;
+
+        public Target()
+        {
+            GL.CreateFramebuffers(1, out Framebuffer);
+            GL.CreateRenderbuffers(1, out Renderbuffer);
+            GL.CreateTextures(TextureTarget.Texture2D, 1, out Texture);
+        }
+    }
+
     #endregion HelperClasses
 
     class Visualization : GameWindow
@@ -105,6 +119,8 @@ namespace AudioReader
         private int _triangleBuffer;
         private Program _screenProgram;
         private Program _currentProgram;
+        private Target _frontTarget;
+        private Target _backTarget;
 
         #region WindowManagement
 
@@ -268,6 +284,39 @@ namespace AudioReader
             _surface.Center = new Vec2d(0, 0);
             _surface.Size.X = 1;
             ComputeSurfaceCorners();
+        }
+
+        Target CreateTarget(int width, int height)
+        {
+            Target target = new Target();
+
+            // set up framebuffer
+            GL.BindTexture(TextureTarget.Texture2D, target.Texture);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMagFilter.Nearest);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, target.Framebuffer);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, target.Texture, 0);
+
+            // set up renderbuffer
+            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, target.Renderbuffer);
+            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent16, width, height);
+            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, target.Renderbuffer);
+
+            // clean up
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
+
+            return target;
+        }
+
+        void CreateRenderTargets()
+        {
+            _frontTarget = CreateTarget(_parameters.ScreenSize.X, _parameters.ScreenSize.Y);
+            _backTarget = CreateTarget(_parameters.ScreenSize.X, _parameters.ScreenSize.Y);
         }
 
         #endregion OpenGL
