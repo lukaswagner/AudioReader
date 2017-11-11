@@ -172,51 +172,42 @@ namespace AudioReader
 
         void CompileScreenProgram()
         {
-            using (StreamReader vs = new StreamReader("Shader/GlslSandboxFramework/ScreenShader.vert"))
-            using (StreamReader fs = new StreamReader("Shader/GlslSandboxFramework/ScreenShader.frag"))
-            {
-                int vertexObject = GL.CreateShader(ShaderType.VertexShader);
-                int fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
+            int program = CreateProgram("Shader/GlslSandboxFramework/ScreenShader.vert", "Shader/GlslSandboxFramework/ScreenShader.frag");
+            
+            _screenProgram.Id = program;
+            GL.UseProgram(program);
+            CacheUniformLocation(_screenProgram, "resolution");
+            CacheUniformLocation(_screenProgram, "texture");
 
-                // Compile vertex shader
-                GL.ShaderSource(vertexObject, vs.ReadToEnd());
-                GL.CompileShader(vertexObject);
-                GL.GetShaderInfoLog(vertexObject, out string info);
-                GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out int status_code);
-
-                if (status_code != 1)
-                    throw new ApplicationException(info);
-
-                // Compile fragment shader
-                GL.ShaderSource(fragmentObject, fs.ReadToEnd());
-                GL.CompileShader(fragmentObject);
-                GL.GetShaderInfoLog(fragmentObject, out info);
-                GL.GetShader(fragmentObject, ShaderParameter.CompileStatus, out status_code);
-
-                if (status_code != 1)
-                    throw new ApplicationException(info);
-
-                int program = GL.CreateProgram();
-                GL.AttachShader(program, vertexObject);
-                GL.AttachShader(program, fragmentObject);
-                GL.LinkProgram(program);
-
-                GL.DeleteShader(vertexObject);
-                GL.DeleteShader(fragmentObject);
-
-                _screenProgram.Id = program;
-                GL.UseProgram(program);
-                CacheUniformLocation(_screenProgram, "resolution");
-                CacheUniformLocation(_screenProgram, "texture");
-
-                CacheAttributeLocation(_screenProgram, "position");
-                GL.EnableVertexAttribArray(_screenProgram.AttributeLocations["position"]);
-            }
+            CacheAttributeLocation(_screenProgram, "position");
+            GL.EnableVertexAttribArray(_screenProgram.AttributeLocations["position"]);
         }
 
         void Compile(string fsPath)
         {
-            using (StreamReader vs = new StreamReader("Shader/GlslSandboxFramework/ScreenShader.vert"))
+            int program = CreateProgram("Shaders/GlslSandboxFramework/MapToSurfaceShader.vert", fsPath);
+
+            if (_currentProgram.Id > 0)
+                GL.DeleteProgram(_currentProgram.Id);
+
+            _currentProgram.Id = program;
+            CacheUniformLocation(_currentProgram, "time");
+            CacheUniformLocation(_currentProgram, "mouse");
+            CacheUniformLocation(_currentProgram, "resolution");
+            CacheUniformLocation(_currentProgram, "backbuffer");
+            CacheUniformLocation(_currentProgram, "surfaceSize");
+            GL.UseProgram(program);
+            CacheAttributeLocation(_currentProgram, "surfacePosAttrib");
+            CacheAttributeLocation(_currentProgram, "position");
+            GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["surfacePosAttrib"]);
+            GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["position"]);
+        }
+
+        int CreateProgram(string vsPath, string fsPath)
+        {
+            int program;
+
+            using (StreamReader vs = new StreamReader(vsPath))
             using (StreamReader fs = new StreamReader(fsPath))
             {
                 int vertexObject = GL.CreateShader(ShaderType.VertexShader);
@@ -240,37 +231,24 @@ namespace AudioReader
                 if (status_code != 1)
                     throw new ApplicationException(info);
 
-                int program = GL.CreateProgram();
+                program = GL.CreateProgram();
                 GL.AttachShader(program, vertexObject);
                 GL.AttachShader(program, fragmentObject);
                 GL.LinkProgram(program);
 
                 GL.DeleteShader(vertexObject);
                 GL.DeleteShader(fragmentObject);
-
-                if (_currentProgram.Id > 0)
-                    GL.DeleteProgram(_currentProgram.Id);
-
-                _currentProgram.Id = program;
-                CacheUniformLocation(_currentProgram, "time");
-                CacheUniformLocation(_currentProgram, "mouse");
-                CacheUniformLocation(_currentProgram, "resolution");
-                CacheUniformLocation(_currentProgram, "backbuffer");
-                CacheUniformLocation(_currentProgram, "surfaceSize");
-                GL.UseProgram(program);
-                CacheAttributeLocation(_currentProgram, "surfacePosAttrib");
-                CacheAttributeLocation(_currentProgram, "position");
-                GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["surfacePosAttrib"]);
-                GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["position"]);
             }
+
+            return program;
         }
 
-        void CacheUniformLocation(Program program, String label)
+        void CacheUniformLocation(Program program, string label)
         {
             program.UniformLocations[label] = GL.GetUniformLocation(program.Id, label);
         }
 
-        void CacheAttributeLocation(Program program, String label)
+        void CacheAttributeLocation(Program program, string label)
         {
             program.AttributeLocations[label] = GL.GetAttribLocation(program.Id, label);
         }
