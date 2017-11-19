@@ -121,6 +121,7 @@ namespace AudioReader
         private Program _currentProgram;
         private Target _frontTarget;
         private Target _backTarget;
+        private double _quality = 1;
 
         #region WindowManagement
 
@@ -151,25 +152,21 @@ namespace AudioReader
             
             Compile("Shader/GlslSandbox/Example.frag");
 
-            _setupWindow();
+            OnResize(e);
 
             GL.ClearColor(Color4.Black);
-        }
-
-        private void _setupWindow()
-        {
-            GL.Viewport(ClientRectangle.X, ClientRectangle.Y, ClientRectangle.Width, ClientRectangle.Height);
-
-            GL.MatrixMode(MatrixMode.Projection);
-            GL.LoadIdentity();
-            GL.Ortho(-1, 1, 0, 1, -0.1, 1);
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
 
-            _setupWindow();
+            _parameters.ScreenSize.X = (int)(ClientRectangle.Width / _quality);
+            _parameters.ScreenSize.Y = (int)(ClientRectangle.Height / _quality);
+
+            ComputeSurfaceCorners();
+            GL.Viewport(0, 0, ClientRectangle.Width, ClientRectangle.Height);
+            CreateRenderTargets();
         }
 
         #endregion WindowManagement
