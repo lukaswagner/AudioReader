@@ -48,7 +48,7 @@ namespace AudioReader
     {
         private static Parameters _instance = null;
         public DateTime StartTime = DateTime.Now;
-        public DateTime Time = DateTime.Now;
+        public double Time = 0;
         public Vec2d Mouse = new Vec2d(0.5, 0.5);
         public Vec2i ScreenSize = new Vec2i(0, 0);
 
@@ -167,6 +167,13 @@ namespace AudioReader
             ComputeSurfaceCorners();
             GL.Viewport(0, 0, ClientRectangle.Width, ClientRectangle.Height);
             CreateRenderTargets();
+        }
+
+        protected override void OnRenderFrame(FrameEventArgs e)
+        {
+            base.OnRenderFrame(e);
+
+            Render();
         }
 
         #endregion WindowManagement
@@ -316,6 +323,56 @@ namespace AudioReader
             _backTarget = CreateTarget(_parameters.ScreenSize.X, _parameters.ScreenSize.Y);
         }
 
+        void Render()
+        {
+            _parameters.Time = (DateTime.Now - _parameters.StartTime).TotalMilliseconds;
+
+            // set uniforms for custom shader
+            GL.UseProgram(_currentProgram.Id);
+
+            GL.Uniform1(_currentProgram.UniformLocations["time"], (float)_parameters.Time);
+            GL.Uniform2(_currentProgram.UniformLocations["mouse"], (float)_parameters.Mouse.X, (float)_parameters.Mouse.Y);
+            GL.Uniform2(_currentProgram.UniformLocations["resolution"], (float)_parameters.ScreenSize.X, (float)_parameters.ScreenSize.Y);
+            GL.Uniform1(_currentProgram.UniformLocations["backbuffer"], 0);
+            GL.Uniform2(_currentProgram.UniformLocations["surfaceSize"], (float)_surface.Size.X, (float)_surface.Size.Y);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _surface.Buffer);
+            GL.VertexAttribPointer(_currentProgram.AttributeLocations["surfacePosAttrib"], 2, VertexAttribPointerType.Float, false, 0, 0);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _triangleBuffer);
+            GL.VertexAttribPointer(_currentProgram.AttributeLocations["position"], 2, VertexAttribPointerType.Float, false, 0, 0);
+
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, _backTarget.Texture);
+
+            // render custom shader to frontbuffer
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _frontTarget.Framebuffer);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+
+            // set uniforms for screen shader
+            GL.UseProgram(_screenProgram.Id);
+            GL.Uniform2(_screenProgram.UniformLocations["resolution"], (float)_parameters.ScreenSize.X, (float)_parameters.ScreenSize.Y);
+            GL.Uniform1(_screenProgram.UniformLocations["texture"], 1);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _triangleBuffer);
+            GL.VertexAttribPointer(_screenProgram.AttributeLocations["position"], 2, VertexAttribPointerType.Float, false, 0, 0);
+
+            GL.ActiveTexture(TextureUnit.Texture1);
+            GL.BindTexture(TextureTarget.Texture2D, _frontTarget.Texture);
+
+            // render front buffer to screen
+
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+
+            // swap buffers
+
+            Target temp = _frontTarget;
+            _frontTarget = _backTarget;
+            _backTarget = temp;
+        }
+
         #endregion OpenGL
 
         #region Helper
@@ -427,7 +484,7 @@ namespace AudioReader
 
         #region Rendering
 
-        protected override void OnRenderFrame(FrameEventArgs e)
+        void OldRenderFunction(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
 
