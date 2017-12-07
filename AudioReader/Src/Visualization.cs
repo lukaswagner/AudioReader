@@ -37,7 +37,7 @@ namespace AudioReader
         }
     }
 
-    class Program
+    class ShaderProgram
     {
         public int Id;
         public Dictionary<String, int> UniformLocations = new Dictionary<string, int>();
@@ -117,8 +117,8 @@ namespace AudioReader
         private Parameters _parameters = Parameters.GetInstance();
         private Surface _surface = Surface.GetInstance();
         private int _triangleBuffer;
-        private Program _screenProgram;
-        private Program _currentProgram;
+        private ShaderProgram _screenProgram = new ShaderProgram();
+        private ShaderProgram _currentProgram = new ShaderProgram();
         private Target _frontTarget;
         private Target _backTarget;
         private double _quality = 1;
@@ -150,7 +150,7 @@ namespace AudioReader
         {
             base.OnLoad(e);
             
-            Compile("Shader/GlslSandbox/Example.frag");
+            Compile("Shader/GlslSandbox/Fractal.frag");
 
             OnResize(e);
 
@@ -203,15 +203,15 @@ namespace AudioReader
 
         void Compile(string fsPath)
         {
-            int program = CreateProgram("Shaders/GlslSandboxFramework/MapToSurfaceShader.vert", fsPath);
+            int program = CreateProgram("Shader/GlslSandboxFramework/MapToSurfaceShader.vert", fsPath);
 
             if (_currentProgram.Id > 0)
                 GL.DeleteProgram(_currentProgram.Id);
 
             _currentProgram.Id = program;
             GL.UseProgram(program);
-            CacheUniformLocations(_screenProgram, new string[] { "time", "mouse", "resolution", "backbuffer", "surfaceSize" });
-            CacheAttributeLocations(_screenProgram, new string[] { "surfacePosAttrib", "position" });
+            CacheUniformLocations(_currentProgram, new string[] { "time", "mouse", "resolution", "backbuffer", "surfaceSize" });
+            CacheAttributeLocations(_currentProgram, new string[] { "surfacePosAttrib", "position" });
             GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["surfacePosAttrib"]);
             GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["position"]);
         }
@@ -256,13 +256,13 @@ namespace AudioReader
             return program;
         }
 
-        void CacheUniformLocations(Program program, string[] labels)
+        void CacheUniformLocations(ShaderProgram program, string[] labels)
         {
             foreach(string label in labels)
                 program.UniformLocations[label] = GL.GetUniformLocation(program.Id, label);
         }
 
-        void CacheAttributeLocations(Program program, string[] labels)
+        void CacheAttributeLocations(ShaderProgram program, string[] labels)
         {
             foreach (string label in labels)
                 program.AttributeLocations[label] = GL.GetAttribLocation(program.Id, label);
