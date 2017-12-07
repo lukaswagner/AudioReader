@@ -149,8 +149,10 @@ namespace AudioReader
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            
+
+            InitializeBuffers();
             Compile("Shader/GlslSandbox/Fractal.frag");
+            CompileScreenProgram();
 
             OnResize(e);
 
@@ -164,7 +166,7 @@ namespace AudioReader
             _parameters.ScreenSize.X = (int)(ClientRectangle.Width / _quality);
             _parameters.ScreenSize.Y = (int)(ClientRectangle.Height / _quality);
 
-            ComputeSurfaceCorners();
+            ResetSurface();
             GL.Viewport(0, 0, ClientRectangle.Width, ClientRectangle.Height);
             CreateRenderTargets();
         }
