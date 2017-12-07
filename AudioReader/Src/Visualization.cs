@@ -42,6 +42,11 @@ namespace AudioReader
         public int Id;
         public Dictionary<String, int> UniformLocations = new Dictionary<string, int>();
         public Dictionary<String, int> AttributeLocations = new Dictionary<string, int>();
+
+        ~ShaderProgram()
+        {
+            GL.DeleteProgram(Id);
+        }
     }
 
     class Parameters
@@ -81,6 +86,11 @@ namespace AudioReader
                 _instance = new Surface();
             return _instance;
         }
+
+        ~Surface()
+        {
+            GL.DeleteBuffer(Buffer);
+        }
     }
 
     class Target
@@ -94,6 +104,13 @@ namespace AudioReader
             GL.CreateFramebuffers(1, out Framebuffer);
             GL.CreateRenderbuffers(1, out Renderbuffer);
             GL.CreateTextures(TextureTarget.Texture2D, 1, out Texture);
+        }
+
+        ~Target()
+        {
+            GL.DeleteFramebuffers(1, ref Framebuffer);
+            GL.DeleteRenderbuffers(1, ref Renderbuffer);
+            GL.DeleteTextures(1, ref Texture);
         }
     }
 
@@ -123,6 +140,11 @@ namespace AudioReader
         private Target _backTarget;
         private double _quality = 1;
 
+        ~Visualization()
+        {
+            GL.DeleteBuffer(_triangleBuffer);
+        }
+
         #region WindowManagement
 
         public Visualization(float[] data) : base(800, 600)
@@ -150,11 +172,11 @@ namespace AudioReader
         {
             base.OnLoad(e);
 
+            OnResize(e);
+
             InitializeBuffers();
             Compile("Shader/GlslSandbox/Fractal.frag");
             CompileScreenProgram();
-
-            OnResize(e);
 
             GL.ClearColor(Color4.Black);
         }
@@ -166,7 +188,7 @@ namespace AudioReader
             _parameters.ScreenSize.X = (int)(ClientRectangle.Width / _quality);
             _parameters.ScreenSize.Y = (int)(ClientRectangle.Height / _quality);
 
-            ResetSurface();
+            ComputeSurfaceCorners();
             GL.Viewport(0, 0, ClientRectangle.Width, ClientRectangle.Height);
             CreateRenderTargets();
         }
@@ -272,7 +294,7 @@ namespace AudioReader
 
         void ComputeSurfaceCorners()
         {
-            _surface.Size.X = _surface.Size.Y * _parameters.ScreenSize.X / (double)_parameters.ScreenSize.Y;
+            _surface.Size.X = _surface.Size.Y * _parameters.ScreenSize.X / _parameters.ScreenSize.Y;
             double halfWidth = _surface.Size.X * 0.5;
             double halfHeight = _surface.Size.Y * 0.5;
             GL.BindBuffer(BufferTarget.ArrayBuffer, _surface.Buffer);
