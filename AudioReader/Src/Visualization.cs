@@ -267,7 +267,7 @@ namespace AudioReader
 
                 if (status_code != 1)
                     throw new ApplicationException(info);
-
+                
                 program = GL.CreateProgram();
                 GL.AttachShader(program, vertexObject);
                 GL.AttachShader(program, fragmentObject);
@@ -449,21 +449,21 @@ namespace AudioReader
 
         void Mouse_ButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (Keyboard.GetState().IsKeyDown(Key.LShift))
-                ResetSurface();
-            if (e.Button == MouseButton.Left)
-                _surface.IsPanning = true;
-            else
-                _surface.IsZooming = true;
+            //if (Keyboard.GetState().IsKeyDown(Key.LShift))
+            //    ResetSurface();
+            //if (e.Button == MouseButton.Left)
+            //    _surface.IsPanning = true;
+            //else
+            //    _surface.IsZooming = true;
 
-            _surface.Last.X = e.X;
-            _surface.Last.Y = e.Y;
+            //_surface.Last.X = e.X;
+            //_surface.Last.Y = e.Y;
         }
 
         void Mouse_ButtonUp(object sender, MouseButtonEventArgs e)
         {
-            _surface.IsPanning = false;
-            _surface.IsZooming = false;
+            //_surface.IsPanning = false;
+            //_surface.IsZooming = false;
         }
 
         void Mouse_Move(object sender, MouseMoveEventArgs e)
@@ -483,118 +483,119 @@ namespace AudioReader
             _parameters.Mouse.X = clientX / (double)Width;
             _parameters.Mouse.Y = clientY / (double)Height;
 
-            if (_surface.IsPanning)
-            {
-                _surface.Center.X -= dx * _surface.Size.X / (double)Width;
-                _surface.Center.Y -= dy * _surface.Size.Y / (double)Height;
-            }
-            else if (_surface.IsZooming)
-            {
-                _surface.Size.Y *= Math.Pow(0.997, dx + dy);
-            }
-
             _surface.Last.X = clientX;
             _surface.Last.Y = clientY;
-            ComputeSurfaceCorners();
+
+            //if (_surface.IsPanning)
+            //{
+            //    _surface.Center.X -= dx * _surface.Size.X / (double)Width;
+            //    _surface.Center.Y -= dy * _surface.Size.Y / (double)Height;
+            //    ComputeSurfaceCorners();
+            //}
+            //else if (_surface.IsZooming)
+            //{
+            //    _surface.Size.Y *= Math.Pow(0.997, dx + dy);
+            //    ComputeSurfaceCorners();
+            //}
         }
 
         void Mouse_Leave(object sender, EventArgs e)
         {
-            _surface.IsPanning = false;
-            _surface.IsZooming = false;
+            //_surface.IsPanning = false;
+            //_surface.IsZooming = false;
         }
 
         #endregion Mouse
 
         #region Rendering
 
-        void OldRenderFunction(FrameEventArgs e)
-        {
-            base.OnRenderFrame(e);
+        //void OldRenderFunction(FrameEventArgs e)
+        //{
+        //    base.OnRenderFrame(e);
 
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            GL.Color4(Color4.Gray);
-            GL.LineWidth(2);
+        //    GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        //    GL.Color4(Color4.Gray);
+        //    GL.LineWidth(2);
 
-            // volume normalization
-            double volumeMax = _maxVolume.Count > 0 ? _maxVolume.Max() : 0.01;
-            double valueFactor = 0.8 / volumeMax;
-            double maxVolume = 0;
+        //    // volume normalization
+        //    double volumeMax = _maxVolume.Count > 0 ? _maxVolume.Max() : 0.01;
+        //    double valueFactor = 0.8 / volumeMax;
+        //    double maxVolume = 0;
 
-            // bass detection
-            double bassSum = 0;
-            for (int i = 0; i < 10; i++) bassSum += _data[i];
+        //    // bass detection
+        //    double bassSum = 0;
+        //    for (int i = 0; i < 10; i++) bassSum += _data[i];
 
-            if (_bassVolume.Count >= _bassSamples)
-                _bassVolume.Dequeue();
-            _bassVolume.Enqueue(bassSum);
+        //    if (_bassVolume.Count >= _bassSamples)
+        //        _bassVolume.Dequeue();
+        //    _bassVolume.Enqueue(bassSum);
 
-            if (_localBassVolume.Count >= _localBassSamples)
-                _localBassVolume.Dequeue();
-            _localBassVolume.Enqueue(bassSum);
+        //    if (_localBassVolume.Count >= _localBassSamples)
+        //        _localBassVolume.Dequeue();
+        //    _localBassVolume.Enqueue(bassSum);
 
-            if (_localBassVolume.Average() > _bassVolume.Average() * 1.5)
-            {
-                if (_newBeat)
-                {
-                    OnBeatDetected(EventArgs.Empty);
-                    _newBeat = false;
-                }
-                GL.Color4(Color4.White);
-            }
-            else
-                _newBeat = true;
+        //    if (_localBassVolume.Average() > _bassVolume.Average() * 1.5)
+        //    {
+        //        if (_newBeat)
+        //        {
+        //            OnBeatDetected(EventArgs.Empty);
+        //            _newBeat = false;
+        //        }
+        //        GL.Color4(Color4.White);
+        //    }
+        //    else
+        //        _newBeat = true;
 
-            // find base b so that b^(samples) = entries => logarithmic scaling on x-axis
-            // b^(samples) = entries => b = samplest root of entries => b = entries^(1/samples)
-            double b = Math.Pow(_entriesPerChannel, 1.0 / _samplesPerChannel);
+        //    // find base b so that b^(samples) = entries => logarithmic scaling on x-axis
+        //    // b^(samples) = entries => b = samplest root of entries => b = entries^(1/samples)
+        //    double b = Math.Pow(_entriesPerChannel, 1.0 / _samplesPerChannel);
 
-            double[] sampleEdges = new double[_samplesPerChannel + 1];
-            for (int i = 0; i <= _samplesPerChannel; i++)
-                sampleEdges[i] = Math.Pow(b, i) - 1;
+        //    double[] sampleEdges = new double[_samplesPerChannel + 1];
+        //    for (int i = 0; i <= _samplesPerChannel; i++)
+        //        sampleEdges[i] = Math.Pow(b, i) - 1;
 
-            GL.Begin(PrimitiveType.Lines);
-            // max volume line
-            GL.Vertex2(-1, volumeMax * valueFactor);
-            GL.Vertex2(1, volumeMax * valueFactor);
-            // center line
-            GL.Vertex2(0, 0);
-            GL.Vertex2(0, 1);
-            GL.End();
+        //    GL.Begin(PrimitiveType.Lines);
+        //    // max volume line
+        //    GL.Vertex2(-1, volumeMax * valueFactor);
+        //    GL.Vertex2(1, volumeMax * valueFactor);
+        //    // center line
+        //    GL.Vertex2(0, 0);
+        //    GL.Vertex2(0, 1);
+        //    GL.End();
 
-            GL.LineWidth(5);
-            GL.Begin(PrimitiveType.Lines);
-            for (int i = 0; i < _samplesPerChannel; i++)
-            {
-                // sum up all values in range
-                double left = 0;
-                double right = 0;
-                // the very last sample will be ignored, but those high frequencies rarely carry useful data
-                double start = sampleEdges[i];
-                double end = sampleEdges[i + 1];
-                for (double j = start; j < end; j++)
-                {
-                    left += _interpolatedValue(j, 0);
-                    right += _interpolatedValue(j, 1);
-                }
+        //    GL.LineWidth(5);
+        //    GL.Begin(PrimitiveType.Lines);
+        //    for (int i = 0; i < _samplesPerChannel; i++)
+        //    {
+        //        // sum up all values in range
+        //        double left = 0;
+        //        double right = 0;
+        //        // the very last sample will be ignored, but those high frequencies rarely carry useful data
+        //        double start = sampleEdges[i];
+        //        double end = sampleEdges[i + 1];
+        //        for (double j = start; j < end; j++)
+        //        {
+        //            left += _interpolatedValue(j, 0);
+        //            right += _interpolatedValue(j, 1);
+        //        }
 
-                if (left > maxVolume) maxVolume = left;
-                if (right > maxVolume) maxVolume = right;
+        //        if (left > maxVolume) maxVolume = left;
+        //        if (right > maxVolume) maxVolume = right;
 
-                GL.Vertex2(-(double)i / _samplesPerChannel, left * valueFactor);
-                GL.Vertex2(-(double)(i + 1) / _samplesPerChannel, left * valueFactor);
+        //        GL.Vertex2(-(double)i / _samplesPerChannel, left * valueFactor);
+        //        GL.Vertex2(-(double)(i + 1) / _samplesPerChannel, left * valueFactor);
 
-                GL.Vertex2((double)i / _samplesPerChannel, right * valueFactor);
-                GL.Vertex2((double)(i + 1) / _samplesPerChannel, right * valueFactor);
-            }
-            GL.End();
+        //        GL.Vertex2((double)i / _samplesPerChannel, right * valueFactor);
+        //        GL.Vertex2((double)(i + 1) / _samplesPerChannel, right * valueFactor);
+        //    }
+        //    GL.End();
 
-            if (_maxVolume.Count >= _volumeSamples)
-                _maxVolume.Dequeue();
-            _maxVolume.Enqueue(maxVolume);
+        //    if (_maxVolume.Count >= _volumeSamples)
+        //        _maxVolume.Dequeue();
+        //    _maxVolume.Enqueue(maxVolume);
 
-            SwapBuffers();
-        }
+        //    SwapBuffers();
+        //}
 
         #endregion Rendering
     }
