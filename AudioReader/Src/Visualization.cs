@@ -101,9 +101,9 @@ namespace AudioReader
 
         public Target()
         {
-            GL.CreateFramebuffers(1, out Framebuffer);
-            GL.CreateRenderbuffers(1, out Renderbuffer);
-            GL.CreateTextures(TextureTarget.Texture2D, 1, out Texture);
+            Framebuffer = GL.GenFramebuffer();
+            Renderbuffer = GL.GenRenderbuffer();
+            Texture = GL.GenTexture();
         }
 
         ~Target()
@@ -207,11 +207,11 @@ namespace AudioReader
         void InitializeBuffers()
         {
             // Create vertex buffer (2 triangles)
-            GL.CreateBuffers(1, out _triangleBuffer);
+            _triangleBuffer = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, _triangleBuffer);
             GL.BufferData(BufferTarget.ArrayBuffer, 12, new float[] { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f }, BufferUsageHint.StaticDraw);
             // Create surface buffer (coordinates at screen corners)
-            GL.CreateBuffers(1, out _surface.Buffer);
+            _surface.Buffer = GL.GenBuffer();
         }
 
         void CompileScreenProgram()
