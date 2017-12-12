@@ -172,13 +172,11 @@ namespace AudioReader
         {
             base.OnLoad(e);
 
-            OnResize(e);
-
             InitializeBuffers();
-            Compile("Shader/GlslSandbox/Fractal.frag");
+            OnResize(e);
             CompileScreenProgram();
 
-            GL.ClearColor(Color4.Black);
+            Compile("Shader/GlslSandbox/Fractal.frag");
         }
 
         protected override void OnResize(EventArgs e)
@@ -272,6 +270,11 @@ namespace AudioReader
                 GL.AttachShader(program, vertexObject);
                 GL.AttachShader(program, fragmentObject);
                 GL.LinkProgram(program);
+                GL.GetProgramInfoLog(program, out info);
+                GL.GetProgram(program, GetProgramParameterName.LinkStatus, out status_code);
+
+                if (status_code != 1)
+                    throw new ApplicationException(info);
 
                 GL.DeleteShader(vertexObject);
                 GL.DeleteShader(fragmentObject);
@@ -294,7 +297,7 @@ namespace AudioReader
 
         void ComputeSurfaceCorners()
         {
-            _surface.Size.X = _surface.Size.Y * _parameters.ScreenSize.X / _parameters.ScreenSize.Y;
+            _surface.Size.X = (_surface.Size.Y * _parameters.ScreenSize.X) / _parameters.ScreenSize.Y;
             double halfWidth = _surface.Size.X * 0.5;
             double halfHeight = _surface.Size.Y * 0.5;
             GL.BindBuffer(BufferTarget.ArrayBuffer, _surface.Buffer);
@@ -401,31 +404,31 @@ namespace AudioReader
 
         #region Helper
 
-        private static double Clamp(double value, double min, double max)
-        {
-            return value < min ? min : value > max ? max : value;
-        }
+        //private static double Clamp(double value, double min, double max)
+        //{
+        //    return value < min ? min : value > max ? max : value;
+        //}
 
-        private static double MapClamped(double value, double oldMin, double oldMax, double newMin, double newMax)
-        {
-            if (oldMax - oldMin == 0) return newMax;
-            double factor = Clamp((value - oldMin) / (oldMax - oldMin), 0, 1);
-            return factor * newMax + (1 - factor) * newMin;
-        }
+        //private static double MapClamped(double value, double oldMin, double oldMax, double newMin, double newMax)
+        //{
+        //    if (oldMax - oldMin == 0) return newMax;
+        //    double factor = Clamp((value - oldMin) / (oldMax - oldMin), 0, 1);
+        //    return factor * newMax + (1 - factor) * newMin;
+        //}
 
-        private double _getOffsettedValue(double index, int offset)
-        {
-            return _data[((int)index) * 2 + offset];
-        }
+        //private double _getOffsettedValue(double index, int offset)
+        //{
+        //    return _data[((int)index) * 2 + offset];
+        //}
 
-        private double _interpolatedValue(double index, int offset)
-        {
-            double floor = Math.Floor(index);
-            double ceiling = Math.Ceiling(index);
-            if (floor == ceiling)
-                return _getOffsettedValue(index, offset);
-            return MapClamped(index, floor, ceiling, _getOffsettedValue(floor, offset), _getOffsettedValue(ceiling, offset));
-        }
+        //private double _interpolatedValue(double index, int offset)
+        //{
+        //    double floor = Math.Floor(index);
+        //    double ceiling = Math.Ceiling(index);
+        //    if (floor == ceiling)
+        //        return _getOffsettedValue(index, offset);
+        //    return MapClamped(index, floor, ceiling, _getOffsettedValue(floor, offset), _getOffsettedValue(ceiling, offset));
+        //}
 
         #endregion Helper
 
@@ -477,24 +480,26 @@ namespace AudioReader
             _surface.ClientLast.X = clientX;
             _surface.ClientLast.Y = clientY;
 
-            int dx = clientX - _surface.Last.X;
-            int dy = clientY - _surface.Last.Y;
-
-            _parameters.Mouse.X = clientX / (double)Width;
-            _parameters.Mouse.Y = clientY / (double)Height;
-
-            _surface.Last.X = clientX;
-            _surface.Last.Y = clientY;
+            _parameters.Mouse.X = clientX / (double)ClientRectangle.Width;
+            _parameters.Mouse.Y = 1 - clientY / (double)ClientRectangle.Height;
 
             //if (_surface.IsPanning)
             //{
+            //    int dx = clientX - _surface.Last.X;
+            //    int dy = clientY - _surface.Last.Y;
             //    _surface.Center.X -= dx * _surface.Size.X / (double)Width;
             //    _surface.Center.Y -= dy * _surface.Size.Y / (double)Height;
+            //    _surface.Last.X = clientX;
+            //    _surface.Last.Y = clientY;
             //    ComputeSurfaceCorners();
             //}
             //else if (_surface.IsZooming)
             //{
+            //    int dx = clientX - _surface.Last.X;
+            //    int dy = clientY - _surface.Last.Y;
             //    _surface.Size.Y *= Math.Pow(0.997, dx + dy);
+            //    _surface.Last.X = clientX;
+            //    _surface.Last.Y = clientY;
             //    ComputeSurfaceCorners();
             //}
         }
