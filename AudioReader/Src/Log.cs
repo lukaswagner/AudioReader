@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AudioReader
@@ -13,86 +15,135 @@ namespace AudioReader
             Verbose, Debug, Info, Warn, Error
         }
 
+        private class LogEntry
+        {
+            public LogLevel LogLevel;
+            public string Tag;
+            public string Message;
+
+            public LogEntry(LogLevel logLevel, string tag, string message)
+            {
+                LogLevel = logLevel;
+                Tag = tag;
+                Message = message;
+            }
+
+            public void LogToConsole()
+            {
+                if (LogLevel >= Log.Level)
+                {
+                    if (_changeConsoleColor(LogLevel, out ConsoleColor consoleColor))
+                    {
+                        Console.ForegroundColor = consoleColor;
+                    }
+                    Console.WriteLine(_getLogLevelString(LogLevel) + " " + Tag.PadRight(TagLength).Substring(0, TagLength) + " : " + Message);
+                    Console.ResetColor();
+                }
+            }
+
+            private static string _getLogLevelString(LogLevel logLevel)
+            {
+                switch (logLevel)
+                {
+                    case LogLevel.Verbose:
+                        return "[Vrb]";
+                    case LogLevel.Debug:
+                        return "[Dbg]";
+                    case LogLevel.Info:
+                        return "[Inf]";
+                    case LogLevel.Warn:
+                        return "[Wrn]";
+                    case LogLevel.Error:
+                        return "[Err]";
+                    default:
+                        return "[N/A]";
+                }
+            }
+
+            private static bool _changeConsoleColor(LogLevel logLevel, out ConsoleColor consoleColor)
+            {
+                consoleColor = ConsoleColor.White;
+                switch (logLevel)
+                {
+                    case LogLevel.Verbose:
+                        return false;
+                    case LogLevel.Debug:
+                        return false;
+                    case LogLevel.Info:
+                        return false;
+                    case LogLevel.Warn:
+                        consoleColor = ConsoleColor.Yellow;
+                        return true;
+                    case LogLevel.Error:
+                        consoleColor = ConsoleColor.Red;
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        }
+
+        private static BlockingCollection<LogEntry> _queue = new BlockingCollection<LogEntry>();
+        private static Thread _logLoopThread;
+        private static bool _runLogLoop = true;
+        private static object _logLoopLock = new object();
         public static LogLevel Level = LogLevel.Info;
         public static int TagLength = 15;
 
-        private static void _log(LogLevel logLevel, string tag, string message)
+        static Log()
         {
-            if(logLevel >= Level)
+            _logLoopThread = new Thread(_logLoop);
+            _logLoopThread.Start();
+            AppDomain.CurrentDomain.ProcessExit += _stopLogLoop;
+        }
+
+        private static void _stopLogLoop(object sender, EventArgs e)
+        {
+            lock (_logLoopLock)
             {
-                if(_changeConsoleColor(logLevel, out ConsoleColor consoleColor))
+                _runLogLoop = false;
+            }
+            _logLoopThread.Join();
+        }
+
+        private static void _logLoop()
+        {
+            while(true)
+            {
+                lock(_logLoopLock)
                 {
-                    Console.ForegroundColor = consoleColor;
+                    if(!_runLogLoop)
+                    {
+                        return;
+                    }
                 }
-                Console.WriteLine(_getLogLevelString(logLevel) + " " + tag.PadRight(TagLength).Substring(0, TagLength) + " : " + message);
-                Console.ResetColor();
-            }
-        }
-
-        private static string _getLogLevelString(LogLevel logLevel)
-        {
-            switch (logLevel)
-            {
-                case LogLevel.Verbose:
-                    return "[Vrb]";
-                case LogLevel.Debug:
-                    return "[Dbg]";
-                case LogLevel.Info:
-                    return "[Inf]";
-                case LogLevel.Warn:
-                    return "[Wrn]";
-                case LogLevel.Error:
-                    return "[Err]";
-                default:
-                    return "[N/A]";
-            }
-        }
-
-        private static bool _changeConsoleColor(LogLevel logLevel, out ConsoleColor consoleColor)
-        {
-            consoleColor = ConsoleColor.White;
-            switch (logLevel)
-            {
-                case LogLevel.Verbose:
-                    return false;
-                case LogLevel.Debug:
-                    return false;
-                case LogLevel.Info:
-                    return false;
-                case LogLevel.Warn:
-                    consoleColor = ConsoleColor.Yellow;
-                    return true;
-                case LogLevel.Error:
-                    consoleColor = ConsoleColor.Red;
-                    return true;
-                default:
-                    return false;
+                _queue.Take().LogToConsole();
             }
         }
 
         public static void Verbose(string tag, string message)
         {
-            _log(LogLevel.Verbose, tag, message);
+            _queue.Add(new LogEntry(LogLevel.Verbose, tag, message));
         }
 
         public static void Debug(string tag, string message)
         {
-            _log(LogLevel.Debug, tag, message);
+            _queue.Add(new LogEntry(LogLevel.Debug, tag, message));
         }
 
         public static void Info(string tag, string message)
         {
-            _log(LogLevel.Info, tag, message);
+            _queue.Add(new LogEntry(LogLevel.Info, tag, message));
         }
 
         public static void Warn(string tag, string message)
         {
-            _log(LogLevel.Warn, tag, message);
+            _queue.Add(new LogEntry(LogLevel.Warn, tag, message));
         }
 
         public static void Error(string tag, string message)
         {
-            _log(LogLevel.Error, tag, message);
+            _queue.Add(new LogEntry(LogLevel.Error, tag, message));
         }
     }
 }
