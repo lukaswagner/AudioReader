@@ -43,7 +43,7 @@ namespace AudioReader
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Log.Error("Config", "Could not set property " + property + "\n" + e.Message);
                 return false;
             }
 
