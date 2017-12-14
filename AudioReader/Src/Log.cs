@@ -70,27 +70,27 @@ namespace AudioReader
             }
         }
 
-        public static void V(string tag, string message)
+        public static void Verbose(string tag, string message)
         {
             _log(LogLevel.Verbose, tag, message);
         }
 
-        public static void D(string tag, string message)
+        public static void Debug(string tag, string message)
         {
             _log(LogLevel.Debug, tag, message);
         }
 
-        public static void I(string tag, string message)
+        public static void Info(string tag, string message)
         {
             _log(LogLevel.Info, tag, message);
         }
 
-        public static void W(string tag, string message)
+        public static void Warn(string tag, string message)
         {
             _log(LogLevel.Warn, tag, message);
         }
 
-        public static void E(string tag, string message)
+        public static void Error(string tag, string message)
         {
             _log(LogLevel.Error, tag, message);
         }
