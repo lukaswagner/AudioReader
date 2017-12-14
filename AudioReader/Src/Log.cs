@@ -13,11 +13,11 @@ namespace AudioReader
             Verbose, Debug, Info, Warn, Error
         }
 
-        public static LogLevel _logLevel = LogLevel.Info;
+        public static LogLevel Level = LogLevel.Info;
 
         private static void _log(LogLevel logLevel, string tag, string message)
         {
-            if(logLevel >= _logLevel)
+            if(logLevel >= Level)
             {
                 Console.WriteLine(message);
             }
