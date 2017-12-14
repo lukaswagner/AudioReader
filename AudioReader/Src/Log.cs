@@ -20,7 +20,12 @@ namespace AudioReader
         {
             if(logLevel >= Level)
             {
+                if(_changeConsoleColor(logLevel, out ConsoleColor consoleColor))
+                {
+                    Console.ForegroundColor = consoleColor;
+                }
                 Console.WriteLine(_getLogLevelString(logLevel) + " " + tag.PadRight(TagLength).Substring(0, TagLength) + " : " + message);
+                Console.ResetColor();
             }
         }
 
@@ -40,6 +45,28 @@ namespace AudioReader
                     return "[Err]";
                 default:
                     return "[N/A]";
+            }
+        }
+
+        private static bool _changeConsoleColor(LogLevel logLevel, out ConsoleColor consoleColor)
+        {
+            consoleColor = ConsoleColor.White;
+            switch (logLevel)
+            {
+                case LogLevel.Verbose:
+                    return false;
+                case LogLevel.Debug:
+                    return false;
+                case LogLevel.Info:
+                    return false;
+                case LogLevel.Warn:
+                    consoleColor = ConsoleColor.Yellow;
+                    return true;
+                case LogLevel.Error:
+                    consoleColor = ConsoleColor.Red;
+                    return true;
+                default:
+                    return false;
             }
         }
 
