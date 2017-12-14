@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace AudioReader
 {
@@ -108,11 +104,11 @@ namespace AudioReader
 
         private static void _logLoop()
         {
-            while(true)
+            while (true)
             {
-                lock(_logLoopLock)
+                lock (_logLoopLock)
                 {
-                    if(!_runLogLoop)
+                    if (!_runLogLoop)
                     {
                         return;
                     }
@@ -121,29 +117,10 @@ namespace AudioReader
             }
         }
 
-        public static void Verbose(string tag, string message)
-        {
-            _queue.Add(new LogEntry(LogLevel.Verbose, tag, message));
-        }
-
-        public static void Debug(string tag, string message)
-        {
-            _queue.Add(new LogEntry(LogLevel.Debug, tag, message));
-        }
-
-        public static void Info(string tag, string message)
-        {
-            _queue.Add(new LogEntry(LogLevel.Info, tag, message));
-        }
-
-        public static void Warn(string tag, string message)
-        {
-            _queue.Add(new LogEntry(LogLevel.Warn, tag, message));
-        }
-
-        public static void Error(string tag, string message)
-        {
-            _queue.Add(new LogEntry(LogLevel.Error, tag, message));
-        }
+        public static void Verbose(string tag, string message) =>_queue.Add(new LogEntry(LogLevel.Verbose, tag, message));
+        public static void Debug(string tag, string message) => _queue.Add(new LogEntry(LogLevel.Debug, tag, message));
+        public static void Info(string tag, string message) => _queue.Add(new LogEntry(LogLevel.Info, tag, message));
+        public static void Warn(string tag, string message) => _queue.Add(new LogEntry(LogLevel.Warn, tag, message));
+        public static void Error(string tag, string message) => _queue.Add(new LogEntry(LogLevel.Error, tag, message));
     }
 }
