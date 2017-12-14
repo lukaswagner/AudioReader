@@ -14,12 +14,32 @@ namespace AudioReader
         }
 
         public static LogLevel Level = LogLevel.Info;
+        public static int TagLength = 15;
 
         private static void _log(LogLevel logLevel, string tag, string message)
         {
             if(logLevel >= Level)
             {
-                Console.WriteLine(message);
+                Console.WriteLine(_getLogLevelString(logLevel) + " " + tag.PadRight(TagLength).Substring(0, TagLength) + " : " + message);
+            }
+        }
+
+        private static string _getLogLevelString(LogLevel logLevel)
+        {
+            switch (logLevel)
+            {
+                case LogLevel.Verbose:
+                    return "[Vrb]";
+                case LogLevel.Debug:
+                    return "[Dbg]";
+                case LogLevel.Info:
+                    return "[Inf]";
+                case LogLevel.Warn:
+                    return "[Wrn]";
+                case LogLevel.Error:
+                    return "[Err]";
+                default:
+                    return "[N/A]";
             }
         }
 

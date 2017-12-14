@@ -79,6 +79,7 @@
   <ItemGroup>
     <Compile Include="Src\HueController.cs" />
     <Compile Include="Src\Config.cs" />
+    <Compile Include="Src\Log.cs" />
     <Compile Include="Src\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Src\Visualization.cs" />
