@@ -26,15 +26,12 @@ namespace AudioReader
 
             public void LogToConsole()
             {
-                if (LogLevel >= Level)
+                if (_changeConsoleColor(LogLevel, out ConsoleColor consoleColor))
                 {
-                    if (_changeConsoleColor(LogLevel, out ConsoleColor consoleColor))
-                    {
-                        Console.ForegroundColor = consoleColor;
-                    }
-                    Console.WriteLine(_getLogLevelString(LogLevel) + " " + Tag.PadRight(TagLength).Substring(0, TagLength) + " : " + Message);
-                    Console.ResetColor();
+                    Console.ForegroundColor = consoleColor;
                 }
+                Console.WriteLine(_getLogLevelString(LogLevel) + " " + Tag.PadRight(TagLength).Substring(0, TagLength) + " : " + Message);
+                Console.ResetColor();
             }
 
             private static string _getLogLevelString(LogLevel logLevel)
@@ -106,7 +103,7 @@ namespace AudioReader
 
         private static void _add(LogLevel logLevel, string tag, string message)
         {
-            if (_enabled)
+            if (_enabled && logLevel >= Level)
                 _queue.Add(new LogEntry(logLevel, tag, message));
         }
 
