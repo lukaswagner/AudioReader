@@ -17,6 +17,7 @@ namespace AudioReader
         static void Main(string[] args)
         {
             Log.Level = Log.LogLevel.Verbose;
+            Log.Enable();
 
             _data = new float[2048];
 

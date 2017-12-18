@@ -26,7 +26,7 @@ namespace AudioReader
 
             public void LogToConsole()
             {
-                if (LogLevel >= Log.Level)
+                if (LogLevel >= Level)
                 {
                     if (_changeConsoleColor(LogLevel, out ConsoleColor consoleColor))
                     {
@@ -80,27 +80,14 @@ namespace AudioReader
         }
 
         private static BlockingCollection<LogEntry> _queue = new BlockingCollection<LogEntry>();
-        private static Thread _logLoopThread;
+        private static Thread _logLoopThread = new Thread(_logLoop);
         private static bool _runLogLoop = true;
         private static object _logLoopLock = new object();
+        private static bool _enabled = false;
         public static LogLevel Level = LogLevel.Info;
         public static int TagLength = 15;
 
-        static Log()
-        {
-            _logLoopThread = new Thread(_logLoop);
-            _logLoopThread.Start();
-            AppDomain.CurrentDomain.ProcessExit += _stopLogLoop;
-        }
-
-        private static void _stopLogLoop(object sender, EventArgs e)
-        {
-            lock (_logLoopLock)
-            {
-                _runLogLoop = false;
-            }
-            _logLoopThread.Join();
-        }
+        private static void _exitHandler(object sender, EventArgs e) => Disable();
 
         private static void _logLoop()
         {
@@ -117,10 +104,38 @@ namespace AudioReader
             }
         }
 
-        public static void Verbose(string tag, string message) =>_queue.Add(new LogEntry(LogLevel.Verbose, tag, message));
-        public static void Debug(string tag, string message) => _queue.Add(new LogEntry(LogLevel.Debug, tag, message));
-        public static void Info(string tag, string message) => _queue.Add(new LogEntry(LogLevel.Info, tag, message));
-        public static void Warn(string tag, string message) => _queue.Add(new LogEntry(LogLevel.Warn, tag, message));
-        public static void Error(string tag, string message) => _queue.Add(new LogEntry(LogLevel.Error, tag, message));
+        private static void _add(LogLevel logLevel, string tag, string message)
+        {
+            if (_enabled)
+                _queue.Add(new LogEntry(logLevel, tag, message));
+        }
+
+        public static void Enable()
+        {
+            _enabled = true;
+            _logLoopThread.Start();
+            AppDomain.CurrentDomain.ProcessExit += _exitHandler;
+        }
+
+        public static void Disable()
+        {
+            _enabled = false;
+            lock (_logLoopLock)
+            {
+                _runLogLoop = false;
+            }
+            _logLoopThread.Join();
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        public static void Verbose(string tag, string message) => _add(LogLevel.Verbose, tag, message);
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        public static void Debug(string tag, string message) => _add(LogLevel.Debug, tag, message);
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        public static void Info(string tag, string message) => _add(LogLevel.Info, tag, message);
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        public static void Warn(string tag, string message) => _add(LogLevel.Warn, tag, message);
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        public static void Error(string tag, string message) => _add(LogLevel.Error, tag, message);
     }
 }
