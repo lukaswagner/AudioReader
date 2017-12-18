@@ -8,7 +8,7 @@ namespace AudioReader
     {
         public enum LogLevel
         {
-            Verbose, Debug, Info, Warn, Error
+            Verbose, Debug, Info, Warn, Error, Off
         }
 
         private class LogEntry
@@ -58,12 +58,6 @@ namespace AudioReader
                 consoleColor = ConsoleColor.White;
                 switch (logLevel)
                 {
-                    case LogLevel.Verbose:
-                        return false;
-                    case LogLevel.Debug:
-                        return false;
-                    case LogLevel.Info:
-                        return false;
                     case LogLevel.Warn:
                         consoleColor = ConsoleColor.Yellow;
                         return true;
@@ -80,8 +74,7 @@ namespace AudioReader
         private static Thread _logLoopThread = new Thread(_logLoop);
         private static bool _runLogLoop = true;
         private static object _logLoopLock = new object();
-        private static bool _enabled = false;
-        public static LogLevel Level = LogLevel.Info;
+        private static LogLevel _level = LogLevel.Off;
         public static int TagLength = 15;
 
         private static void _exitHandler(object sender, EventArgs e) => Disable();
@@ -103,20 +96,23 @@ namespace AudioReader
 
         private static void _add(LogLevel logLevel, string tag, string message)
         {
-            if (_enabled && logLevel >= Level)
+            if (logLevel >= _level)
                 _queue.Add(new LogEntry(logLevel, tag, message));
         }
 
-        public static void Enable()
+        public static void Enable(LogLevel logLevel)
         {
-            _enabled = true;
-            _logLoopThread.Start();
-            AppDomain.CurrentDomain.ProcessExit += _exitHandler;
+            _level = logLevel;
+            if(!_logLoopThread.IsAlive)
+            {
+                _logLoopThread.Start();
+                AppDomain.CurrentDomain.ProcessExit += _exitHandler;
+            }
         }
 
         public static void Disable()
         {
-            _enabled = false;
+            _level = LogLevel.Off;
             lock (_logLoopLock)
             {
                 _runLogLoop = false;
