@@ -11,7 +11,7 @@ namespace AudioReader
         private static WASAPIPROC _callbackProcess;
         private static float[] _data;
         private static bool _dataValid = false;
-        private static Visualization _vis;
+        private static GlslRenderer _vis;
         private static HueController _hueController;
 
         static void Main(string[] args)
@@ -24,8 +24,8 @@ namespace AudioReader
             while(!_setUpAudio(deviceId))
                 deviceId = _listDevices();
 
-            _vis = new Visualization(_data);
-            _hueController = new HueController(_vis);
+            _vis = new GlslRenderer();
+            //_hueController = new HueController(_vis);
             _vis.Run(60, 60);
 
             _hueController.TurnAllTheLightsOff();
