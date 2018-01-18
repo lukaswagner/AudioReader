@@ -23,9 +23,9 @@ namespace AudioReader
 
         private LightCommand _beatCommand;
         private LightCommand _defaultCommand;
-        public HueController(Visualization vis)
+        public HueController()
         {
-            vis.BeatDetected += new BeatEventHandler(_beatDetected);
+            BeatDetection.BeatDetected += new BeatEventHandler(_beatDetected);
 
             HttpBridgeLocator locator = new HttpBridgeLocator();
             IEnumerable<LocatedBridge> bridgeIPs = locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
