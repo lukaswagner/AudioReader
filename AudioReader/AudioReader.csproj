@@ -95,7 +95,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>xcopy $(ProjectDir)Shader\* Shader\ /y /s</PreBuildEvent>
-    <PostBuildEvent>xcopy $(ProjectDir)Libraries\Bass\Native\* /y</PostBuildEvent>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+    <PostBuildEvent>
+      xcopy $(ProjectDir)Libraries\Bass\Native\* /y
+      xcopy $(ProjectDir)Shader\* Shader\ /y /s
+    </PostBuildEvent>
   </PropertyGroup>
 </Project>
