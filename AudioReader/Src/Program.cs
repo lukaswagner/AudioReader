@@ -16,7 +16,7 @@ namespace AudioReader
 
         static void Main(string[] args)
         {
-            Log.Enable(Log.LogLevel.Verbose);
+            Log.Enable(Log.LogLevel.Debug);
 
             _data = new float[2048];
 
@@ -26,8 +26,9 @@ namespace AudioReader
             while(!_setUpAudio(deviceId))
                 deviceId = _listDevices();
 
+            BeatDetection.Enable(_data);
+            _hueController = new HueController();
             _vis = new GlslRenderer();
-            //_hueController = new HueController(_vis);
             _vis.Run(60, 60);
 
             //_hueController.TurnAllTheLightsOff();

@@ -23,9 +23,9 @@ namespace AudioReader
 
         private LightCommand _beatCommand;
         private LightCommand _defaultCommand;
-        public HueController(Visualization vis)
+        public HueController()
         {
-            vis.BeatDetected += new BeatEventHandler(_beatDetected);
+            BeatDetection.BeatDetected += new BeatEventHandler(_beatDetected);
 
             HttpBridgeLocator locator = new HttpBridgeLocator();
             IEnumerable<LocatedBridge> bridgeIPs = locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
@@ -50,7 +50,10 @@ namespace AudioReader
 
             //Dictionary<string, string> hueKeyConfig = IniParser.GetSectionParameter("philips_hue");
             if (!Config.Get("philips_hue/key", out _key))
+            {
                 _key = _client.RegisterAsync("mypersonalappname", "mydevicename").GetAwaiter().GetResult();
+                Config.Set("philips_hue/key", _key);
+            }
 
             _client.Initialize(_key);
 
@@ -73,11 +76,12 @@ namespace AudioReader
 
         private void _beatDetected(object sender, EventArgs e)
         {
-            foreach (var group in _groups)
-            {
-                int index = _rnd.Next(group.Lights.Count());
-                _pulseLight(group.Lights[index]);
-            }
+            if(_groups != null)
+                foreach (var group in _groups)
+                {
+                    int index = _rnd.Next(group.Lights.Count());
+                    _pulseLight(group.Lights[index]);
+                }
         }
 
         private async void _pulseLight(string light)
