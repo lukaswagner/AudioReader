@@ -96,13 +96,16 @@ namespace AudioReader
         private Vec2i _mouse = new Vec2i(0, 0);
         private Vec2i _resolution = new Vec2i(0, 0);
         private int _textureResolution = 128;
+        private float[] _audioData;
 
         #endregion Member
 
         #region Main
 
-        public GlslRenderer() : base(800, 600, GraphicsMode.Default, "GLSL Renderer")
+        public GlslRenderer(float[] audioData) : base(800, 600, GraphicsMode.Default, "GLSL Renderer")
         {
+            _audioData = audioData;
+
             Mouse.Move += _mouseMove;
             Keyboard.KeyDown += _keyDown;
 
@@ -118,7 +121,7 @@ namespace AudioReader
             GL.ClearColor(Color4.Blue);
 
             _resizeWindow();
-            _compileShaders("Shader/GlslSandbox/Fractal.frag");
+            _compileShaders("Shader/GlslSandbox/Spectrum.frag");
             _setupVBO();
             _setupFramebuffer();
             Log.Info("GLSL Renderer", "Renderer setup complete.");
@@ -201,7 +204,7 @@ namespace AudioReader
                 _textureProgram.Reset();
             _textureProgram.Id = _createProgram("Shader/GlslSandboxFramework/CopyPositionAttribute.vert", fsPath);
             _textureProgram.Use();
-            _textureProgram.CacheUniformLocations("time", "mouse", "resolution", "backbuffer", "surfaceSize");
+            _textureProgram.CacheUniformLocations("time", "mouse", "resolution", "audioData");
             _textureProgram.CacheAttributeLocations("position");
             GL.EnableVertexAttribArray(_textureProgram.AttributeLocations["position"]);
 
@@ -273,12 +276,14 @@ namespace AudioReader
             GL.Viewport(0, 0, _textureResolution, _textureResolution);
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            if(_textureProgram.TryGetUniform("time", out int texTime))
+            if (_textureProgram.TryGetUniform("time", out int texTime))
                 GL.Uniform1(texTime, (float)_time);
             if (_textureProgram.TryGetUniform("mouse", out int texMouse))
                 GL.Uniform2(texMouse, (float)_mouse.X / _resolution.X, (float)_mouse.Y / _resolution.Y);
             if (_textureProgram.TryGetUniform("resolution", out int texResolution))
                 GL.Uniform2(texResolution, (float)_textureResolution, _textureResolution);
+            if (_textureProgram.TryGetUniform("audioData", out int texAudioData))
+                GL.Uniform1(texAudioData, 128, _audioData);
 
             GL.BindVertexArray(_triangleArray);
             GL.DrawArrays(PrimitiveType.Quads, 0, 4);
