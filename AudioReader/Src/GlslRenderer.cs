@@ -1,6 +1,7 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Input;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -101,6 +102,7 @@ namespace AudioReader
 
         public GlslRenderer() : base(800, 600, GraphicsMode.Default, "GLSL Renderer")
         {
+            Mouse.Move += _mouseMove;
         }
 
         protected override void OnLoad(EventArgs e)
@@ -261,7 +263,7 @@ namespace AudioReader
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
             GL.Uniform1(_textureProgram.GetUniform("time"), (float)_time);
-            GL.Uniform2(_textureProgram.GetUniform("mouse"), _mouse.X * 2048f / _resolution.X, _mouse.Y * 2048f / _resolution.Y);
+            GL.Uniform2(_textureProgram.GetUniform("mouse"), (float)_mouse.X / _resolution.X, (float)_mouse.Y / _resolution.Y);
             GL.Uniform2(_textureProgram.GetUniform("resolution"), 2048f, 2048f);
 
             GL.BindVertexArray(_triangleArray);
@@ -285,5 +287,15 @@ namespace AudioReader
         }
 
         #endregion Helper
-    }
+
+        #region Events
+
+        void _mouseMove(object sender, MouseMoveEventArgs e)
+        {
+            _mouse.X = e.X;
+            _mouse.Y = e.Y;
+        }
+
+            #endregion Events
+        }
 }
