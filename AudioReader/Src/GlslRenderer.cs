@@ -12,6 +12,22 @@ namespace AudioReader
 {
     class GlslRenderer : GameWindow
     {
+        #region Structs
+
+        struct Vec2i
+        {
+            public int X;
+            public int Y;
+
+            public Vec2i(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+        }
+
+        #endregion Structs
+
         #region Member
 
         private uint _triangleArray;
@@ -19,6 +35,10 @@ namespace AudioReader
         private int _currentProgram;
         private Dictionary<string, int> _uniformLocations = new Dictionary<string, int>();
         private Dictionary<string, int> _attributeLocations = new Dictionary<string, int>();
+        private DateTime _startTime = DateTime.Now;
+        private double _time;
+        private Vec2i _mouse = new Vec2i(0, 0);
+        private Vec2i _resolution = new Vec2i(0, 0);
 
         #endregion Member
 
@@ -34,7 +54,7 @@ namespace AudioReader
             GL.ClearColor(Color4.Blue);
 
             _setupWindow();
-            _compileShader("Shader/GlslSandbox/Red.frag");
+            _compileShader("Shader/GlslSandbox/Fractal.frag");
             _setupVBO();
         }
 
@@ -56,7 +76,10 @@ namespace AudioReader
 
         private void _setupWindow()
         {
-            GL.Viewport(0, 0, ClientRectangle.Width, ClientRectangle.Height);
+            int width = ClientRectangle.Width;
+            int height = ClientRectangle.Height;
+            GL.Viewport(0, 0, width, height);
+            _resolution = new Vec2i(width, height);
         }
 
         private void _setupVBO()
@@ -156,9 +179,14 @@ namespace AudioReader
 
         private void _render()
         {
+            _time = (DateTime.Now - _startTime).TotalMilliseconds;
+
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             
             GL.UseProgram(_currentProgram);
+            GL.Uniform1(_uniformLocations["time"], (float)_time);
+            GL.Uniform2(_uniformLocations["mouse"], (float)_mouse.X, _mouse.Y);
+            GL.Uniform2(_uniformLocations["resolution"], (float)_resolution.X, _resolution.Y);
             GL.BindVertexArray(_triangleArray);
             GL.DrawArrays(PrimitiveType.Quads, 0, 4);
 
