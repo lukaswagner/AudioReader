@@ -76,11 +76,12 @@ namespace AudioReader
 
         private void _beatDetected(object sender, EventArgs e)
         {
-            foreach (var group in _groups)
-            {
-                int index = _rnd.Next(group.Lights.Count());
-                _pulseLight(group.Lights[index]);
-            }
+            if(_groups != null)
+                foreach (var group in _groups)
+                {
+                    int index = _rnd.Next(group.Lights.Count());
+                    _pulseLight(group.Lights[index]);
+                }
         }
 
         private async void _pulseLight(string light)
