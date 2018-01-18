@@ -30,7 +30,7 @@ namespace AudioReader
             //_hueController = new HueController(_vis);
             _vis.Run(60, 60);
 
-            _hueController.TurnAllTheLightsOff();
+            //_hueController.TurnAllTheLightsOff();
         }
 
         private static string _listDevices()
@@ -65,7 +65,7 @@ namespace AudioReader
         private static bool _checkError(bool success, string step)
         {
             if (success)
-                Log.Info("BASS Setup", step + " successful");
+                Log.Info("BASS Setup", step + " successful.");
             else
                 Log.Error("BASS Setup", step + " unsuccessful. Error: " + Bass.BASS_ErrorGetCode());
             return success;

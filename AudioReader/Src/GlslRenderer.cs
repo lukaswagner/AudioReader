@@ -51,11 +51,14 @@ namespace AudioReader
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
+
+            Log.Info("GLSL Renderer", "Setting up renderer...");
             GL.ClearColor(Color4.Blue);
 
             _setupWindow();
             _compileShader("Shader/GlslSandbox/Fractal.frag");
             _setupVBO();
+            Log.Info("GLSL Renderer", "Renderer setup complete.");
         }
 
         protected override void OnResize(EventArgs e)
@@ -80,10 +83,12 @@ namespace AudioReader
             int height = ClientRectangle.Height;
             GL.Viewport(0, 0, width, height);
             _resolution = new Vec2i(width, height);
+            Log.Debug("GLSL Renderer", "Resized window.");
         }
 
         private void _setupVBO()
         {
+            Log.Debug("GLSL Renderer", "Setting up VBO...");
             GL.GenVertexArrays(1, out _triangleArray);
             GL.BindVertexArray(_triangleArray);
             GL.GenBuffers(1, out _triangleBuffer);
@@ -96,10 +101,12 @@ namespace AudioReader
             GL.EnableVertexAttribArray(_attributeLocations["position"]);
             GL.DisableClientState(ArrayCap.VertexArray);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            Log.Debug("GLSL Renderer", "VBO setup complete.");
         }
 
         private void _compileShader(string fsPath)
         {
+            Log.Debug("GLSL Renderer", "Compiling shaders...");
             int program = _createProgram("Shader/GlslSandboxFramework/ScreenShader.vert", fsPath);
 
             if (_currentProgram > 0)
@@ -110,6 +117,7 @@ namespace AudioReader
             _cacheUniformLocations(new string[] { "time", "mouse", "resolution", "backbuffer", "surfaceSize" });
             _cacheAttributeLocations(new string[] { "position" });
             GL.EnableVertexAttribArray(_attributeLocations["position"]);
+            Log.Debug("GLSL Renderer", "Shader setup done.");
         }
 
         private int _createProgram(string vsPath, string fsPath)
@@ -164,7 +172,7 @@ namespace AudioReader
             foreach (string label in labels)
             {
                 _uniformLocations[label] = GL.GetUniformLocation(_currentProgram, label);
-                Console.WriteLine("cached uniform " + label + " : " + _uniformLocations[label]);
+                Log.Verbose("GLSL Renderer", "Cached uniform " + label + " with value " + _uniformLocations[label] + ".");
             }
         }
 
@@ -173,7 +181,7 @@ namespace AudioReader
             foreach (string label in labels)
             {
                 _attributeLocations[label] = GL.GetAttribLocation(_currentProgram, label);
-                Console.WriteLine("cached attribute " + label + " : " + _attributeLocations[label]);
+                Log.Verbose("GLSL Renderer", "Cached attribute " + label + " with value " + _attributeLocations[label] + ".");
             }
         }
 
