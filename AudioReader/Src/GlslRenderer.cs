@@ -104,6 +104,7 @@ namespace AudioReader
         public GlslRenderer() : base(800, 600, GraphicsMode.Default, "GLSL Renderer")
         {
             Mouse.Move += _mouseMove;
+            Keyboard.KeyDown += _keyDown;
 
             if (Config.Get("glsl/resolution", out string resolution))
                 _textureResolution = Int32.Parse(resolution);
@@ -304,10 +305,22 @@ namespace AudioReader
 
         #region Events
 
-        void _mouseMove(object sender, MouseMoveEventArgs e)
+        private void _mouseMove(object sender, MouseMoveEventArgs e)
         {
             _mouse.X = e.X;
             _mouse.Y = e.Y;
+        }
+
+        private void _keyDown(object sender, KeyboardKeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+                Exit();
+
+            if (e.Key == Key.F11)
+                if (WindowState == WindowState.Fullscreen)
+                    WindowState = WindowState.Normal;
+                else
+                    WindowState = WindowState.Fullscreen;
         }
 
         #endregion Events
