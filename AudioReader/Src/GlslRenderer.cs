@@ -230,7 +230,7 @@ namespace AudioReader
                 int fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
 
                 // Compile vertex shader
-                GL.ShaderSource(vertexObject, vs.ReadToEnd());
+                GL.ShaderSource(vertexObject, _applyPlaceholder(vs.ReadToEnd()));
                 GL.CompileShader(vertexObject);
                 GL.GetShaderInfoLog(vertexObject, out string info);
                 GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out int status_code);
@@ -239,7 +239,7 @@ namespace AudioReader
                     throw new ApplicationException(info);
 
                 // Compile fragment shader
-                GL.ShaderSource(fragmentObject, fs.ReadToEnd());
+                GL.ShaderSource(fragmentObject, _applyPlaceholder(fs.ReadToEnd()));
                 GL.CompileShader(fragmentObject);
                 GL.GetShaderInfoLog(fragmentObject, out info);
                 GL.GetShader(fragmentObject, ShaderParameter.CompileStatus, out status_code);
@@ -266,6 +266,12 @@ namespace AudioReader
             return program;
         }
 
+        private string _applyPlaceholder(string shaderSource)
+        {
+            string result = shaderSource.Replace("%AUDIODATASIZE%", _audioData.Length.ToString());
+            return result;
+        }
+
         private void _render()
         {
             _time = (DateTime.Now - _startTime).TotalMilliseconds;
@@ -283,7 +289,7 @@ namespace AudioReader
             if (_textureProgram.TryGetUniform("resolution", out int texResolution))
                 GL.Uniform2(texResolution, (float)_textureResolution, _textureResolution);
             if (_textureProgram.TryGetUniform("audioData", out int texAudioData))
-                GL.Uniform1(texAudioData, 128, _audioData);
+                GL.Uniform1(texAudioData, _audioData.Length, _audioData);
 
             GL.BindVertexArray(_triangleArray);
             GL.DrawArrays(PrimitiveType.Quads, 0, 4);

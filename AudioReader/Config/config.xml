@@ -2,6 +2,8 @@
 <config>
   <audio>
     <device>1</device>
+    <arraysize>2048</arraysize>
+    <reduced_arraysize>1024</reduced_arraysize>
   </audio>
   <philips_hue>
     <key>BF2f0oKYa4yj0oheEf4KUQuSZTs5ASROmdTOE7nU</key>

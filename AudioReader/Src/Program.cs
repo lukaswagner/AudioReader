@@ -19,8 +19,12 @@ namespace AudioReader
         {
             Log.Enable(Log.LogLevel.Verbose);
 
-            _data = new float[2048];
-            _reducedData = new float[128];
+            if (!Config.Get("audio/arraysize", out string arraySize))
+                arraySize = "2048";
+            _data = new float[Int32.Parse(arraySize)];
+            if (!Config.Get("audio/reduced_arraysize", out string reducedArraySize))
+                arraySize = "128";
+            _reducedData = new float[Int32.Parse(reducedArraySize)];
 
             if (!Config.Get("audio/device", out string deviceId))
                 deviceId = _listDevices();
@@ -78,7 +82,7 @@ namespace AudioReader
         {
             _dataValid = BassWasapi.BASS_WASAPI_GetData(_data, (int)(BASSData.BASS_DATA_FFT2048) | (int)(BASSData.BASS_DATA_FFT_INDIVIDUAL)) >= 0;
 
-            float[] reducedData = new float[128];
+            float[] reducedData = new float[_reducedData.Length];
             int valuesPerReducedValue = _data.Length / reducedData.Length;
             for(int i = 0; i < _data.Length; i++)
             {
