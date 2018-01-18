@@ -95,6 +95,7 @@ namespace AudioReader
         private double _time;
         private Vec2i _mouse = new Vec2i(0, 0);
         private Vec2i _resolution = new Vec2i(0, 0);
+        private int _textureResolution = 128;
 
         #endregion Member
 
@@ -103,6 +104,9 @@ namespace AudioReader
         public GlslRenderer() : base(800, 600, GraphicsMode.Default, "GLSL Renderer")
         {
             Mouse.Move += _mouseMove;
+
+            if (Config.Get("glsl/resolution", out string resolution))
+                _textureResolution = Int32.Parse(resolution);
         }
 
         protected override void OnLoad(EventArgs e)
@@ -166,7 +170,7 @@ namespace AudioReader
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _framebuffer);
             GL.GenTextures(1, out _texture);
             GL.BindTexture(TextureTarget.Texture2D, _texture);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 2048, 2048, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, _textureResolution, _textureResolution, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
@@ -259,12 +263,12 @@ namespace AudioReader
             // draw to texture
             _textureProgram.Use();
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _framebuffer);
-            GL.Viewport(0, 0, 2048, 2048);
+            GL.Viewport(0, 0, _textureResolution, _textureResolution);
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
             GL.Uniform1(_textureProgram.GetUniform("time"), (float)_time);
             GL.Uniform2(_textureProgram.GetUniform("mouse"), (float)_mouse.X / _resolution.X, (float)_mouse.Y / _resolution.Y);
-            GL.Uniform2(_textureProgram.GetUniform("resolution"), 2048f, 2048f);
+            GL.Uniform2(_textureProgram.GetUniform("resolution"), (float)_textureResolution, _textureResolution);
 
             GL.BindVertexArray(_triangleArray);
             GL.DrawArrays(PrimitiveType.Quads, 0, 4);
