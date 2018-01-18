@@ -86,7 +86,10 @@ namespace AudioReader
 
         private uint _triangleArray;
         private uint _triangleBuffer;
-        private ShaderProgram _currentProgram = new ShaderProgram();
+        private uint _framebuffer;
+        private uint _texture;
+        private ShaderProgram _textureProgram = new ShaderProgram();
+        private ShaderProgram _screenProgram = new ShaderProgram();
         private DateTime _startTime = DateTime.Now;
         private double _time;
         private Vec2i _mouse = new Vec2i(0, 0);
@@ -107,16 +110,17 @@ namespace AudioReader
             Log.Info("GLSL Renderer", "Setting up renderer...");
             GL.ClearColor(Color4.Blue);
 
-            _setupWindow();
-            _compileShader("Shader/GlslSandbox/Fractal.frag");
+            _resizeWindow();
+            _compileShaders("Shader/GlslSandbox/Fractal.frag");
             _setupVBO();
+            _setupFramebuffer();
             Log.Info("GLSL Renderer", "Renderer setup complete.");
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            _setupWindow();
+            _resizeWindow();
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -129,12 +133,9 @@ namespace AudioReader
 
         #region Helper
 
-        private void _setupWindow()
+        private void _resizeWindow()
         {
-            int width = ClientRectangle.Width;
-            int height = ClientRectangle.Height;
-            GL.Viewport(0, 0, width, height);
-            _resolution = new Vec2i(width, height);
+            _resolution = new Vec2i(ClientRectangle.Width, ClientRectangle.Height);
             Log.Debug("GLSL Renderer", "Resized window.");
         }
 
@@ -149,26 +150,56 @@ namespace AudioReader
             int width = ClientRectangle.Width;
             int height = ClientRectangle.Height;
             GL.BufferData(BufferTarget.ArrayBuffer, 4 * 3 * sizeof(float), new float[] { -1f, -1f, 0f, 1f, -1f, 0f, 1f, 1f, 0f, -1f, 1f, 0f}, BufferUsageHint.StaticDraw);
-            GL.VertexAttribPointer(_currentProgram.GetAttribute("position"), 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(_currentProgram.GetAttribute("position"));
+            GL.VertexAttribPointer(_textureProgram.GetAttribute("position"), 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(_textureProgram.GetAttribute("position"));
             GL.DisableClientState(ArrayCap.VertexArray);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             Log.Debug("GLSL Renderer", "VBO setup complete.");
         }
 
-        private void _compileShader(string fsPath)
+        private void _setupFramebuffer()
         {
-            Log.Debug("GLSL Renderer", "Compiling shaders...");
-            int program = _createProgram("Shader/GlslSandboxFramework/ScreenShader.vert", fsPath);
+            Log.Debug("GLSL Renderer", "Setting up framebuffer...");
+            GL.GenFramebuffers(1, out _framebuffer);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _framebuffer);
+            GL.GenTextures(1, out _texture);
+            GL.BindTexture(TextureTarget.Texture2D, _texture);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 2048, 2048, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
+            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, _texture, 0);
+            GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
+            if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
+            {
+                Log.Error("GLSL Renderer", "Could not setup framebuffer: " + GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer));
+                return;
+            }
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            Log.Debug("GLSL Renderer", "Framebuffer setup complete.");
+        }
 
-            if (_currentProgram.Id > 0)
-                _currentProgram.Reset();
+        private void _compileShaders(string fsPath)
+        {
+            Log.Debug("GLSL Renderer", "Setting up shader programs...");
 
-            _currentProgram.Id = program;
-            _currentProgram.Use();
-            _currentProgram.CacheUniformLocations("time", "mouse", "resolution", "backbuffer", "surfaceSize");
-            _currentProgram.CacheAttributeLocations("position");
-            GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["position"]);
+            if (_textureProgram.Id > 0)
+                _textureProgram.Reset();
+            _textureProgram.Id = _createProgram("Shader/GlslSandboxFramework/CopyPositionAttribute.vert", fsPath);
+            _textureProgram.Use();
+            _textureProgram.CacheUniformLocations("time", "mouse", "resolution", "backbuffer", "surfaceSize");
+            _textureProgram.CacheAttributeLocations("position");
+            GL.EnableVertexAttribArray(_textureProgram.AttributeLocations["position"]);
+
+            if (_screenProgram.Id > 0)
+                _screenProgram.Reset();
+            _screenProgram.Id = _createProgram("Shader/GlslSandboxFramework/CopyPositionAttribute.vert", "Shader/GlslSandboxFramework/ScreenShader.frag");
+            _screenProgram.Use();
+            _screenProgram.CacheUniformLocations("texture");
+            _screenProgram.CacheAttributeLocations("position");
+            GL.EnableVertexAttribArray(_screenProgram.AttributeLocations["position"]);
+
             Log.Debug("GLSL Renderer", "Shader setup done.");
         }
 
@@ -223,12 +254,30 @@ namespace AudioReader
         {
             _time = (DateTime.Now - _startTime).TotalMilliseconds;
 
+            // draw to texture
+            _textureProgram.Use();
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _framebuffer);
+            GL.Viewport(0, 0, 2048, 2048);
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+
+            GL.Uniform1(_textureProgram.GetUniform("time"), (float)_time);
+            GL.Uniform2(_textureProgram.GetUniform("mouse"), _mouse.X * 2048f / _resolution.X, _mouse.Y * 2048f / _resolution.Y);
+            GL.Uniform2(_textureProgram.GetUniform("resolution"), 2048f, 2048f);
+
+            GL.BindVertexArray(_triangleArray);
+            GL.DrawArrays(PrimitiveType.Quads, 0, 4);
+
+            // draw to screen
+            _screenProgram.Use();
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.Viewport(0, 0, _resolution.X, _resolution.Y);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            _currentProgram.Use();
-            GL.Uniform1(_currentProgram.GetUniform("time"), (float)_time);
-            GL.Uniform2(_currentProgram.GetUniform("mouse"), (float)_mouse.X, _mouse.Y);
-            GL.Uniform2(_currentProgram.GetUniform("resolution"), (float)_resolution.X, _resolution.Y);
+            GL.Enable(EnableCap.Texture2D);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, _texture);
+            GL.Uniform1(_screenProgram.GetUniform("texture"), 0);
+
             GL.BindVertexArray(_triangleArray);
             GL.DrawArrays(PrimitiveType.Quads, 0, 4);
 

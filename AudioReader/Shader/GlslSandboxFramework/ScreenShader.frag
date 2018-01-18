@@ -1,10 +1,7 @@
-precision mediump float;
-
-uniform vec2 resolution;
 uniform sampler2D texture;
+varying vec2 texcoord;
 
 void main()
 {
-    vec2 uv = gl_FragCoord.xy / resolution.xy;
-    gl_FragColor = texture2D( texture, uv );
+    gl_FragColor = texture2D(texture, texcoord);
 }

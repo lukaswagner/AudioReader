@@ -1,8 +1,6 @@
 // source: http://glslsandbox.com/e#44063.0
 
-#ifdef GL_ES
-precision mediump float;
-#endif
+#version 330 core
 
 #extension GL_OES_standard_derivatives : enable
 
@@ -11,6 +9,7 @@ precision mediump float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
+layout(location = 0) out vec4 color;
 
 
 vec3 hsv2rgb(vec3 c) {
@@ -47,5 +46,5 @@ void main( void ) {
 		col = hsv2rgb(vec3((float(nIter)/40.0)*hueRate, 1.0, 0.8));
 	}
 
-	gl_FragColor = vec4( vec3(col), 1.0 );
+	color = vec4(col, 1.0);
 }
