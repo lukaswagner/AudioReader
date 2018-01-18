@@ -26,15 +26,67 @@ namespace AudioReader
             }
         }
 
+        class ShaderProgram
+        {
+            public int Id;
+            public Dictionary<String, int> UniformLocations = new Dictionary<string, int>();
+            public Dictionary<String, int> AttributeLocations = new Dictionary<string, int>();
+
+            ~ShaderProgram()
+            {
+                GL.DeleteProgram(Id);
+            }
+
+            public void Reset()
+            {
+                GL.DeleteProgram(Id);
+                UniformLocations.Clear();
+                AttributeLocations.Clear();
+            }
+
+            public void Use()
+            {
+                GL.UseProgram(Id);
+            }
+
+            public void CacheUniformLocations(params string[] labels)
+            {
+                Log.Verbose("GLSL Renderer", "Caching uniforms for program " + Id + ".");
+                foreach (string label in labels)
+                {
+                    UniformLocations[label] = GL.GetUniformLocation(Id, label);
+                    Log.Verbose("GLSL Renderer", "Cached uniform " + label + " with value " + UniformLocations[label] + ".");
+                }
+            }
+
+            public void CacheAttributeLocations(params string[] labels)
+            {
+                Log.Verbose("GLSL Renderer", "Caching attributes for program " + Id + ".");
+                foreach (string label in labels)
+                {
+                    AttributeLocations[label] = GL.GetAttribLocation(Id, label);
+                    Log.Verbose("GLSL Renderer", "Cached attribute " + label + " with value " + AttributeLocations[label] + ".");
+                }
+            }
+
+            public int GetUniform(string label)
+            {
+                return UniformLocations.TryGetValue(label, out int position) ? position : -1;
+            }
+
+            public int GetAttribute(string label)
+            {
+                return AttributeLocations.TryGetValue(label, out int position) ? position : -1;
+            }
+        }
+
         #endregion Structs
 
         #region Member
 
         private uint _triangleArray;
         private uint _triangleBuffer;
-        private int _currentProgram;
-        private Dictionary<string, int> _uniformLocations = new Dictionary<string, int>();
-        private Dictionary<string, int> _attributeLocations = new Dictionary<string, int>();
+        private ShaderProgram _currentProgram = new ShaderProgram();
         private DateTime _startTime = DateTime.Now;
         private double _time;
         private Vec2i _mouse = new Vec2i(0, 0);
@@ -97,8 +149,8 @@ namespace AudioReader
             int width = ClientRectangle.Width;
             int height = ClientRectangle.Height;
             GL.BufferData(BufferTarget.ArrayBuffer, 4 * 3 * sizeof(float), new float[] { -1f, -1f, 0f, 1f, -1f, 0f, 1f, 1f, 0f, -1f, 1f, 0f}, BufferUsageHint.StaticDraw);
-            GL.VertexAttribPointer(_attributeLocations["position"], 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(_attributeLocations["position"]);
+            GL.VertexAttribPointer(_currentProgram.GetAttribute("position"), 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(_currentProgram.GetAttribute("position"));
             GL.DisableClientState(ArrayCap.VertexArray);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             Log.Debug("GLSL Renderer", "VBO setup complete.");
@@ -109,14 +161,14 @@ namespace AudioReader
             Log.Debug("GLSL Renderer", "Compiling shaders...");
             int program = _createProgram("Shader/GlslSandboxFramework/ScreenShader.vert", fsPath);
 
-            if (_currentProgram > 0)
-                GL.DeleteProgram(_currentProgram);
+            if (_currentProgram.Id > 0)
+                _currentProgram.Reset();
 
-            _currentProgram = program;
-            GL.UseProgram(_currentProgram);
-            _cacheUniformLocations(new string[] { "time", "mouse", "resolution", "backbuffer", "surfaceSize" });
-            _cacheAttributeLocations(new string[] { "position" });
-            GL.EnableVertexAttribArray(_attributeLocations["position"]);
+            _currentProgram.Id = program;
+            _currentProgram.Use();
+            _currentProgram.CacheUniformLocations("time", "mouse", "resolution", "backbuffer", "surfaceSize");
+            _currentProgram.CacheAttributeLocations("position");
+            GL.EnableVertexAttribArray(_currentProgram.AttributeLocations["position"]);
             Log.Debug("GLSL Renderer", "Shader setup done.");
         }
 
@@ -167,34 +219,16 @@ namespace AudioReader
             return program;
         }
 
-        private void _cacheUniformLocations(string[] labels)
-        {
-            foreach (string label in labels)
-            {
-                _uniformLocations[label] = GL.GetUniformLocation(_currentProgram, label);
-                Log.Verbose("GLSL Renderer", "Cached uniform " + label + " with value " + _uniformLocations[label] + ".");
-            }
-        }
-
-        private void _cacheAttributeLocations(string[] labels)
-        {
-            foreach (string label in labels)
-            {
-                _attributeLocations[label] = GL.GetAttribLocation(_currentProgram, label);
-                Log.Verbose("GLSL Renderer", "Cached attribute " + label + " with value " + _attributeLocations[label] + ".");
-            }
-        }
-
         private void _render()
         {
             _time = (DateTime.Now - _startTime).TotalMilliseconds;
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            
-            GL.UseProgram(_currentProgram);
-            GL.Uniform1(_uniformLocations["time"], (float)_time);
-            GL.Uniform2(_uniformLocations["mouse"], (float)_mouse.X, _mouse.Y);
-            GL.Uniform2(_uniformLocations["resolution"], (float)_resolution.X, _resolution.Y);
+
+            _currentProgram.Use();
+            GL.Uniform1(_currentProgram.GetUniform("time"), (float)_time);
+            GL.Uniform2(_currentProgram.GetUniform("mouse"), (float)_mouse.X, _mouse.Y);
+            GL.Uniform2(_currentProgram.GetUniform("resolution"), (float)_resolution.X, _resolution.Y);
             GL.BindVertexArray(_triangleArray);
             GL.DrawArrays(PrimitiveType.Quads, 0, 4);
 
