@@ -33,16 +33,16 @@ namespace AudioReader
             switch (bridgeIPs.Count())
             {
                 case 0:
-                    Console.WriteLine("No Philips Hue Bridge found.");
+                    Log.Warn("Philips Hue", "No Philips Hue Bridge found.");
                     return;
                     //break;
                 case 1:
                     ip = bridgeIPs.First().IpAddress;
-                    Console.WriteLine("Connecting to Philips Hue Bridge " + ip);
+                    Log.Info("Philips Hue", "Connecting to Philips Hue Bridge " + ip);
                     break;
                 default:
                     ip = bridgeIPs.First().IpAddress;
-                    Console.Write("Multiple Philips Hue Bridges found. Connecting to Philips Hue Bridge " + ip);
+                    Log.Info("Philips Hue", "Multiple Philips Hue Bridges found. Connecting to Philips Hue Bridge " + ip);
                     break;
             }
 
