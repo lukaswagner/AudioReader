@@ -16,6 +16,8 @@ namespace AudioReader
 
         static void Main(string[] args)
         {
+            Log.Enable(Log.LogLevel.Verbose);
+
             _data = new float[2048];
 
             if(!Config.Get("audio/device", out string deviceId))
@@ -33,16 +35,18 @@ namespace AudioReader
 
         private static string _listDevices()
         {
+            Log.Info("BASS Setup", "Available devices:");
+
             for (int i = 0; i < BassWasapi.BASS_WASAPI_GetDeviceCount(); i++)
             {
                 var device = BassWasapi.BASS_WASAPI_GetDeviceInfo(i);
                 if (device.IsEnabled && device.IsLoopback)
                 {
-                    Console.WriteLine(string.Format("{0} - {1}", i, device.name));
+                    Log.Info("BASS Setup", string.Format("{0} - {1}", i, device.name));
                 }
             }
 
-            Console.WriteLine("Enter target device id");
+            Log.Info("BASS Setup", "Enter target device id:");
             return Console.ReadLine();
         }
 
@@ -61,15 +65,10 @@ namespace AudioReader
         private static bool _checkError(bool success, string step)
         {
             if (success)
-                Console.WriteLine(step + " successful");
+                Log.Info("BASS Setup", step + " successful");
             else
-                Console.Write(step + " unsuccessful. Error: " + Bass.BASS_ErrorGetCode());
+                Log.Error("BASS Setup", step + " unsuccessful. Error: " + Bass.BASS_ErrorGetCode());
             return success;
-        }
-
-        private static void _say(object o)
-        {
-            Console.WriteLine(o);
         }
 
         private static int _callbackFunction(IntPtr buffer, int length, IntPtr user)
