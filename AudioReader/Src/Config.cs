@@ -44,6 +44,14 @@ namespace AudioReader
             }
         }
 
+        public static T GetDefault<T>(string property, T defaultValue)
+        {
+            if (Get(property, out T outValue))
+                return outValue;
+            else
+                return defaultValue;
+        }
+
         public static bool Set(string property, object value)
         {
             string value_string = value.ToString();
