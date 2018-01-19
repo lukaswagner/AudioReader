@@ -246,8 +246,8 @@ namespace AudioReader
             Mouse.Move += _mouseMove;
             Keyboard.KeyDown += _keyDown;
 
-            if (Config.Get("glsl/resolution", out string resolution))
-                _textureResolution = Int32.Parse(resolution);
+            if (Config.Get("glsl/resolution", out int resolution))
+                _textureResolution = resolution;
 
             BeatDetection.BeatDetected += (object sender, EventArgs e) =>
             {
