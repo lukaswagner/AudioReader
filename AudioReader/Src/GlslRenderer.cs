@@ -230,7 +230,7 @@ namespace AudioReader
         private double _time;
         private Vec2<int> _mouse = new Vec2<int>(0, 0);
         private Vec2<int> _resolution = new Vec2<int>(0, 0);
-        private int _textureResolution = 128;
+        private int _textureResolution;
         private float[] _audioData;
         private DateTime _lastBeat = DateTime.Now;
         private float _timeSinceLastBeat = 0f;
@@ -246,8 +246,7 @@ namespace AudioReader
             Mouse.Move += _mouseMove;
             Keyboard.KeyDown += _keyDown;
 
-            if (Config.Get("glsl/resolution", out int resolution))
-                _textureResolution = resolution;
+            _textureResolution = Config.GetDefault("glsl/resolution", 128);
 
             BeatDetection.BeatDetected += (object sender, EventArgs e) =>
             {
