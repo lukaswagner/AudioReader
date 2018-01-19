@@ -26,19 +26,37 @@ namespace AudioReader
                 arraySize = "128";
             _reducedData = new float[Int32.Parse(reducedArraySize)];
 
-            if (!Config.Get("audio/device", out string deviceId))
-                deviceId = _listDevices();
+            _checkEnabled("audio", "AudioReader", () =>
+            {
+                if (!Config.Get("audio/device", out string deviceId))
+                    deviceId = _listDevices();
 
-            while(!_setUpAudio(deviceId))
-                deviceId = _listDevices();
+                while (!_setUpAudio(deviceId))
+                    deviceId = _listDevices();
+            });
 
-            BeatDetection.Enable(_data);
+            _checkEnabled("beatdetection", "BeatDetection", () => BeatDetection.Enable(_data));
 
-            _hueController = new HueController();
-            _hueController.TurnAllTheLightsOff();
+            _checkEnabled("philips_hue", "Hue output", () =>
+            {
+                _hueController = new HueController();
+                _hueController.TurnAllTheLightsOff();
+            });
 
-            _vis = new GlslRenderer(_reducedData);
-            _vis.Run(60, 60);
+            // _vis.Run() stops further execution until vis window is closed - call last
+            _checkEnabled("glsl", "GLSL renderer", () =>
+            {
+                _vis = new GlslRenderer(_reducedData);
+                _vis.Run(60, 60);
+            });
+        }
+
+        private static void _checkEnabled(string xmlName, string logName, Action enabledCallback)
+        {
+            bool enabled = Config.Get(xmlName + "/enabled", out string enabledOut) && bool.Parse(enabledOut);
+            Log.Info("Main", logName + (enabled ? " is enabled." : " is disabled."));
+            if (enabled)
+                enabledCallback.Invoke();
         }
 
         private static string _listDevices()

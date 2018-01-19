@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <config>
     <audio>
+        <enabled>true</enabled>
         <device>1</device>
         <arraysize>2048</arraysize>
         <reduced_arraysize>1024</reduced_arraysize>
     </audio>
+    <beatdetection>
+        <enabled>true</enabled>
+    </beatdetection>
     <philips_hue>
+        <enabled>false</enabled>
         <key>BF2f0oKYa4yj0oheEf4KUQuSZTs5ASROmdTOE7nU</key>
         <preserve_color>false</preserve_color>
     </philips_hue>
     <glsl>
+        <enabled>true</enabled>
         <resolution>1024</resolution>
     </glsl>
 </config>
