@@ -232,8 +232,8 @@ namespace AudioReader
         private Vec2<int> _resolution = new Vec2<int>(0, 0);
         private int _textureResolution = 128;
         private float[] _audioData;
-        private float _beat = 0;
-        private float _beatDecreaseFactor = 0.5f;
+        private DateTime _lastBeat = DateTime.Now;
+        private float _timeSinceLastBeat = 0f;
 
         #endregion Member
 
@@ -251,7 +251,7 @@ namespace AudioReader
 
             BeatDetection.BeatDetected += (object sender, EventArgs e) =>
             {
-                _beat = 1;
+                _lastBeat = DateTime.Now;
             };
         }
 
@@ -263,7 +263,7 @@ namespace AudioReader
             Log.Info("GLSL Renderer", "Setting up renderer...");
 
             _resizeWindow();
-            _compileShaders("Shader/GlslSandbox/Spectrum.frag");
+            _compileShaders("Shader/GlslSandbox/BeatTest.frag");
             _setupVBO();
             _setupFramebuffer();
             Log.Info("GLSL Renderer", "Renderer setup complete.");
@@ -413,7 +413,7 @@ namespace AudioReader
         private void _render()
         {
             _time = (DateTime.Now - _startTime).TotalMilliseconds;
-            _beat *= _beatDecreaseFactor;
+            _timeSinceLastBeat = (float)((DateTime.Now - _lastBeat).TotalMilliseconds);
 
             // set up or clean up output textures
             _setupOutput?.Invoke(this, EventArgs.Empty);
@@ -438,7 +438,7 @@ namespace AudioReader
             if (_textureProgram.TryGetUniform("audioData", out int texAudioData))
                 GL.Uniform1(texAudioData, _audioData.Length, _audioData);
             if (_textureProgram.TryGetUniform("beat", out int texBeat))
-                GL.Uniform1(texBeat, _beat);
+                GL.Uniform1(texBeat, _timeSinceLastBeat);
 
             GL.BindVertexArray(_triangleArray);
             GL.DrawArrays(PrimitiveType.Quads, 0, 4);
