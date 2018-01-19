@@ -344,7 +344,7 @@ namespace AudioReader
                 _textureProgram.Reset();
             _textureProgram.Id = _createProgram("Shader/GlslSandboxFramework/CopyPositionAttribute.vert", fsPath);
             _textureProgram.Use();
-            _textureProgram.CacheUniformLocations("time", "mouse", "resolution", "audioData", "beat");
+            _textureProgram.CacheUniformLocations("time", "mouse", "resolution", "audioData", "lastBeat");
             _textureProgram.CacheAttributeLocations("position");
 
             if (_screenProgram.Id > 0)
@@ -437,7 +437,7 @@ namespace AudioReader
                 GL.Uniform2(texResolution, (float)_textureResolution, _textureResolution);
             if (_textureProgram.TryGetUniform("audioData", out int texAudioData))
                 GL.Uniform1(texAudioData, _audioData.Length, _audioData);
-            if (_textureProgram.TryGetUniform("beat", out int texBeat))
+            if (_textureProgram.TryGetUniform("lastBeat", out int texBeat))
                 GL.Uniform1(texBeat, _timeSinceLastBeat);
 
             GL.BindVertexArray(_triangleArray);
