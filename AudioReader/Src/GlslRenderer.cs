@@ -239,7 +239,11 @@ namespace AudioReader
 
         #region Main
 
-        public GlslRenderer(float[] audioData) : base(800, 600, GraphicsMode.Default, "GLSL Renderer")
+        public GlslRenderer(float[] audioData) : base(
+            Config.GetDefault("glsl/window_width", 800), 
+            Config.GetDefault("glsl/window_height", 600), 
+            GraphicsMode.Default, 
+            "GLSL Renderer")
         {
             _audioData = audioData;
 
@@ -262,7 +266,7 @@ namespace AudioReader
             Log.Info("GLSL Renderer", "Setting up renderer...");
 
             _resizeWindow();
-            _compileShaders("Shader/GlslSandbox/BeatTest.frag");
+            _compileShaders("Shader/GlslSandbox/" + Config.GetDefault("glsl/shader", "Spectrum.frag"));
             _setupVBO();
             _setupFramebuffer();
             Log.Info("GLSL Renderer", "Renderer setup complete.");

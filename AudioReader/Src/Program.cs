@@ -17,7 +17,7 @@ namespace AudioReader
 
         static void Main(string[] args)
         {
-            Log.Enable(Log.LogLevel.Verbose);
+            Log.Enable(Config.GetDefault("log/level", "Info"));
 
             _data = new float[Config.GetDefault("audio/arraysize", 2048)];
             _reducedData = new float[Config.GetDefault("audio/reduced_arraysize", 128)];
@@ -43,7 +43,7 @@ namespace AudioReader
             _checkEnabled("glsl", "GLSL renderer", () =>
             {
                 _vis = new GlslRenderer(_reducedData);
-                _vis.Run(60, 60);
+                _vis.Run(60, Config.GetDefault("glsl/framerate", 60));
             });
         }
 
@@ -62,7 +62,8 @@ namespace AudioReader
             for (int i = 0; i < BassWasapi.BASS_WASAPI_GetDeviceCount(); i++)
             {
                 var device = BassWasapi.BASS_WASAPI_GetDeviceInfo(i);
-                if (device.IsEnabled && device.IsLoopback)
+                bool listInputs = Config.GetDefault("audio/list_inputs", false);
+                if (device.IsEnabled && (device.IsLoopback || listInputs && device.IsInput))
                 {
                     Log.Info("BASS Setup", string.Format("{0} - {1}", i, device.name));
                 }
