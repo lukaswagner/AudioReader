@@ -78,11 +78,35 @@ namespace AudioReader
             int deviceId_int = Int32.Parse(deviceId);
 
             BASS_WASAPI_DEVICEINFO devInfo = BassWasapi.BASS_WASAPI_GetDeviceInfo(deviceId_int);
+            if (devInfo == null)
+            {
+                Log.Warn("BASS Setup", "Device " + deviceId + " does not exist.");
+                return false;
+            }
+
             _callbackProcess = new WASAPIPROC(_callbackFunction);
 
-            return _checkError(Bass.BASS_Init(0, devInfo.mixfreq, BASSInit.BASS_DEVICE_DEFAULT, IntPtr.Zero), "BASS_Init")
-                && _checkError(BassWasapi.BASS_WASAPI_Init(deviceId_int, devInfo.mixfreq, devInfo.mixchans, BASSWASAPIInit.BASS_WASAPI_BUFFER, 0f, 0f, _callbackProcess, IntPtr.Zero), "BASS_WASAPI_Init")
-                && _checkError(BassWasapi.BASS_WASAPI_Start(), "BASS_WASAPI_Start");
+            if (!_checkError(Bass.BASS_Init(0, devInfo.mixfreq, BASSInit.BASS_DEVICE_DEFAULT, IntPtr.Zero), "BASS_Init"))
+            {
+                _callbackProcess = null;
+            }
+
+            if (!_checkError(BassWasapi.BASS_WASAPI_Init(deviceId_int, devInfo.mixfreq, devInfo.mixchans, BASSWASAPIInit.BASS_WASAPI_BUFFER, 0f, 0f, _callbackProcess, IntPtr.Zero), "BASS_WASAPI_Init"))
+            {
+                Bass.BASS_Free();
+                _callbackProcess = null;
+                return false;
+            }
+
+            if(!_checkError(BassWasapi.BASS_WASAPI_Start(), "BASS_WASAPI_Start"))
+            {
+                BassWasapi.BASS_WASAPI_Free();
+                Bass.BASS_Free();
+                _callbackProcess = null;
+                return false;
+            }
+
+            return true;
         }
 
         private static bool _checkError(bool success, string step)
