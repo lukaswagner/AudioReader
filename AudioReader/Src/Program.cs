@@ -33,11 +33,12 @@ namespace AudioReader
                 deviceId = _listDevices();
 
             BeatDetection.Enable(_data);
+
             _hueController = new HueController();
+            _hueController.TurnAllTheLightsOff();
+
             _vis = new GlslRenderer(_reducedData);
             _vis.Run(60, 60);
-
-            //_hueController.TurnAllTheLightsOff();
         }
 
         private static string _listDevices()
