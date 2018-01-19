@@ -78,6 +78,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Src\GlslRenderer.cs" />
     <Compile Include="Src\BeatDetection.cs" />
     <Compile Include="Src\HueController.cs" />
     <Compile Include="Src\Config.cs" />
@@ -97,7 +98,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>xcopy $(ProjectDir)Shader\* Shader\ /y /s</PreBuildEvent>
-    <PostBuildEvent>xcopy $(ProjectDir)Libraries\Bass\Native\* /y</PostBuildEvent>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+    <PostBuildEvent>
+      xcopy $(ProjectDir)Libraries\Bass\Native\* /y
+      xcopy $(ProjectDir)Shader\* Shader\ /y /s
+    </PostBuildEvent>
   </PropertyGroup>
 </Project>

@@ -10,25 +10,35 @@ namespace AudioReader
     {
         private static WASAPIPROC _callbackProcess;
         private static float[] _data;
+        private static float[] _reducedData;
         private static bool _dataValid = false;
+        private static GlslRenderer _vis;
         private static HueController _hueController;
 
         static void Main(string[] args)
         {
-            Log.Enable(Log.LogLevel.Debug);
+            Log.Enable(Log.LogLevel.Verbose);
 
-            _data = new float[2048];
+            if (!Config.Get("audio/arraysize", out string arraySize))
+                arraySize = "2048";
+            _data = new float[Int32.Parse(arraySize)];
+            if (!Config.Get("audio/reduced_arraysize", out string reducedArraySize))
+                arraySize = "128";
+            _reducedData = new float[Int32.Parse(reducedArraySize)];
 
-            if(!Config.Get("audio/device", out string deviceId))
+            if (!Config.Get("audio/device", out string deviceId))
                 deviceId = _listDevices();
 
             while(!_setUpAudio(deviceId))
                 deviceId = _listDevices();
 
             BeatDetection.Enable(_data);
-            _hueController = new HueController();
 
+            _hueController = new HueController();
             _hueController.TurnAllTheLightsOff();
+
+            _vis = new GlslRenderer(_reducedData);
+            _vis.Run(60, 60);
         }
 
         private static string _listDevices()
@@ -63,7 +73,7 @@ namespace AudioReader
         private static bool _checkError(bool success, string step)
         {
             if (success)
-                Log.Info("BASS Setup", step + " successful");
+                Log.Info("BASS Setup", step + " successful.");
             else
                 Log.Error("BASS Setup", step + " unsuccessful. Error: " + Bass.BASS_ErrorGetCode());
             return success;
@@ -72,6 +82,17 @@ namespace AudioReader
         private static int _callbackFunction(IntPtr buffer, int length, IntPtr user)
         {
             _dataValid = BassWasapi.BASS_WASAPI_GetData(_data, (int)(BASSData.BASS_DATA_FFT2048) | (int)(BASSData.BASS_DATA_FFT_INDIVIDUAL)) >= 0;
+
+            float[] reducedData = new float[_reducedData.Length];
+            int valuesPerReducedValue = _data.Length / reducedData.Length;
+            for(int i = 0; i < _data.Length; i++)
+            {
+                bool isLeft = i % 2 == 0;
+                int reducedIndex = i / 2 / valuesPerReducedValue;
+                reducedData[isLeft ? (reducedData.Length / 2 - 1) - reducedIndex : (reducedData.Length / 2) + reducedIndex] += _data[i] / valuesPerReducedValue;
+            }
+            reducedData.CopyTo(_reducedData, 0);
+
             return length;
         }
     }
