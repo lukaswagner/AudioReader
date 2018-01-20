@@ -43,8 +43,7 @@ namespace AudioReader
             }
 
             _client = new LocalHueClient(ip);
-
-            //Dictionary<string, string> hueKeyConfig = IniParser.GetSectionParameter("philips_hue");
+            
             if (!Config.Get("philips_hue/key", out _key))
             {
                 _key = _client.RegisterAsync("mypersonalappname", "mydevicename").GetAwaiter().GetResult();
