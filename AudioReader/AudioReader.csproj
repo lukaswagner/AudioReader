@@ -78,6 +78,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Src\GlslRenderer.cs" />
     <Compile Include="Src\BeatDetection.cs" />
     <Compile Include="Src\HueController.cs" />
