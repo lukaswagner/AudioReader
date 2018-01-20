@@ -1,10 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <config>
-	<audio>
-		<device>1</device>
-	</audio>
-	<philips_hue>
-		<key>BF2f0oKYa4yj0oheEf4KUQuSZTs5ASROmdTOE7nU</key>
-		<preserve_color>false</preserve_color>
-	</philips_hue>
+    <log>
+        <level>Debug</level>
+    </log>
+    <audio>
+        <enabled>true</enabled>
+        <list_inputs>true</list_inputs>
+        <device>1</device>
+        <arraysize>2048</arraysize>
+        <reduced_arraysize>1024</reduced_arraysize>
+    </audio>
+    <beatdetection>
+        <enabled>true</enabled>
+        <framerate>60</framerate>
+    </beatdetection>
+    <philips_hue>
+        <enabled>false</enabled>
+        <key>BF2f0oKYa4yj0oheEf4KUQuSZTs5ASROmdTOE7nU</key>
+        <preserve_color>false</preserve_color>
+    </philips_hue>
+    <glsl>
+        <window_width>800</window_width>
+        <window_height>600</window_height>
+        <framerate>60</framerate>
+        <shader>Spectrum.frag</shader>
+        <enabled>true</enabled>
+        <resolution>1024</resolution>
+    </glsl>
 </config>

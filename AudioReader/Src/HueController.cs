@@ -23,9 +23,9 @@ namespace AudioReader
 
         private LightCommand _beatCommand;
         private LightCommand _defaultCommand;
-        public HueController(Visualization vis)
+        public HueController()
         {
-            vis.BeatDetected += new BeatEventHandler(_beatDetected);
+            BeatDetection.BeatDetected += new BeatEventHandler(_beatDetected);
 
             HttpBridgeLocator locator = new HttpBridgeLocator();
             IEnumerable<LocatedBridge> bridgeIPs = locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
@@ -33,16 +33,16 @@ namespace AudioReader
             switch (bridgeIPs.Count())
             {
                 case 0:
-                    Console.WriteLine("No Philips Hue Bridge found.");
+                    Log.Warn("Philips Hue", "No Philips Hue Bridge found.");
                     return;
                     //break;
                 case 1:
                     ip = bridgeIPs.First().IpAddress;
-                    Console.WriteLine("Connecting to Philips Hue Bridge " + ip);
+                    Log.Info("Philips Hue", "Connecting to Philips Hue Bridge " + ip);
                     break;
                 default:
                     ip = bridgeIPs.First().IpAddress;
-                    Console.Write("Multiple Philips Hue Bridges found. Connecting to Philips Hue Bridge " + ip);
+                    Log.Info("Philips Hue", "Multiple Philips Hue Bridges found. Connecting to Philips Hue Bridge " + ip);
                     break;
             }
 
@@ -50,7 +50,10 @@ namespace AudioReader
 
             //Dictionary<string, string> hueKeyConfig = IniParser.GetSectionParameter("philips_hue");
             if (!Config.Get("philips_hue/key", out _key))
+            {
                 _key = _client.RegisterAsync("mypersonalappname", "mydevicename").GetAwaiter().GetResult();
+                Config.Set("philips_hue/key", _key);
+            }
 
             _client.Initialize(_key);
 
@@ -63,21 +66,20 @@ namespace AudioReader
             _defaultCommand.Brightness = 20;
             _defaultCommand.TransitionTime = new TimeSpan(0);
             _defaultCommand.Saturation = 255;
-
-            string preserveColor;
-            Config.Get("philips_hue/preserve_color", out preserveColor);
-            _preserveColor = Convert.ToBoolean(preserveColor);
+            
+            _preserveColor = Config.GetDefault("philips_hue/preserve_color", false);
 
             _groups = _client.GetGroupsAsync().GetAwaiter().GetResult().Where((g) => g.Type == GroupType.Room);
         }
 
         private void _beatDetected(object sender, EventArgs e)
         {
-            foreach (var group in _groups)
-            {
-                int index = _rnd.Next(group.Lights.Count());
-                _pulseLight(group.Lights[index]);
-            }
+            if(_groups != null)
+                foreach (var group in _groups)
+                {
+                    int index = _rnd.Next(group.Lights.Count());
+                    _pulseLight(group.Lights[index]);
+                }
         }
 
         private async void _pulseLight(string light)
