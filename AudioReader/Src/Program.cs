@@ -19,12 +19,12 @@ namespace AudioReader
         {
             Log.Enable(Log.LogLevel.Verbose);
 
-            if (!Config.Get("audio/arraysize", out string arraySize))
-                arraySize = "2048";
-            _data = new float[Int32.Parse(arraySize)];
-            if (!Config.Get("audio/reduced_arraysize", out string reducedArraySize))
-                arraySize = "128";
-            _reducedData = new float[Int32.Parse(reducedArraySize)];
+            if (!Config.Get("audio/arraysize", out int arraySize))
+                arraySize = 2048;
+            _data = new float[arraySize];
+            if (!Config.Get("audio/reduced_arraysize", out int reducedArraySize))
+                reducedArraySize = 128;
+            _reducedData = new float[reducedArraySize];
 
             _checkEnabled("audio", "AudioReader", () =>
             {
@@ -53,7 +53,7 @@ namespace AudioReader
 
         private static void _checkEnabled(string xmlName, string logName, Action enabledCallback)
         {
-            bool enabled = Config.Get(xmlName + "/enabled", out string enabledOut) && bool.Parse(enabledOut);
+            bool enabled = Config.Get(xmlName + "/enabled", out bool enabledOut) && enabledOut;
             Log.Info("Main", logName + (enabled ? " is enabled." : " is disabled."));
             if (enabled)
                 enabledCallback.Invoke();

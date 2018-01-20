@@ -19,7 +19,7 @@ namespace AudioReader
         private ILocalHueClient _client;
         private IEnumerable<Group> _groups;
 
-        private bool _preserveColor;
+        private bool _preserveColor = false;
 
         private LightCommand _beatCommand;
         private LightCommand _defaultCommand;
@@ -66,10 +66,9 @@ namespace AudioReader
             _defaultCommand.Brightness = 20;
             _defaultCommand.TransitionTime = new TimeSpan(0);
             _defaultCommand.Saturation = 255;
-
-            string preserveColor;
-            Config.Get("philips_hue/preserve_color", out preserveColor);
-            _preserveColor = Convert.ToBoolean(preserveColor);
+            
+            if(Config.Get("philips_hue/preserve_color", out bool preserveColor))
+                _preserveColor = preserveColor;
 
             _groups = _client.GetGroupsAsync().GetAwaiter().GetResult().Where((g) => g.Type == GroupType.Room);
         }
