@@ -177,10 +177,10 @@ namespace AudioReader
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, _parent._texture);
 
-                #pragma warning disable IDE0007 // Impliziten Typ verwenden
+                #pragma warning disable IDE0007 // use implicit type - using var here results in ambiguity between function overloads
                 GL.GetTexParameter(TextureTarget.ProxyTexture2D, GetTextureParameter.TextureMinFilter, out int previousMin);
                 GL.GetTexParameter(TextureTarget.ProxyTexture2D, GetTextureParameter.TextureMagFilter, out int previousMag);
-                #pragma warning restore IDE0007 // Impliziten Typ verwenden
+                #pragma warning restore IDE0007 // use implicit type
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)(_useNearest ? TextureMinFilter.Nearest : TextureMinFilter.Linear));
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)(_useNearest ? TextureMagFilter.Nearest : TextureMagFilter.Linear));
                 if (_program.TryGetUniform("texture", out var texture))
