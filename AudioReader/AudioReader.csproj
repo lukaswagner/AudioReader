@@ -103,8 +103,8 @@
   <PropertyGroup>
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     <PostBuildEvent>
-      xcopy $(ProjectDir)Libraries\Bass\Native\* /y
-      xcopy $(ProjectDir)Shader\* Shader\ /y /s
+      xcopy $(ProjectDir)Libraries\Bass\Native\* /y /q
+      xcopy $(ProjectDir)Shader\* Shader\ /y /s /q
     </PostBuildEvent>
   </PropertyGroup>
 </Project>
