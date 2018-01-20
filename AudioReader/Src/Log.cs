@@ -103,11 +103,25 @@ namespace AudioReader
         public static void Enable(LogLevel logLevel)
         {
             _level = logLevel;
-            if(!_logLoopThread.IsAlive)
+            if (!_logLoopThread.IsAlive && logLevel < LogLevel.Off)
             {
                 _logLoopThread.Start();
                 AppDomain.CurrentDomain.ProcessExit += _exitHandler;
             }
+        }
+
+        public static void Enable(String logLevelString)
+        {
+            LogLevel logLevel;
+            try
+            {
+                logLevel = (LogLevel)System.Enum.Parse(typeof(LogLevel), logLevelString);
+            }
+            catch (Exception)
+            {
+                logLevel = LogLevel.Info;
+            }
+            Enable(logLevel);
         }
 
         public static void Disable()

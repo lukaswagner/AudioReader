@@ -13,7 +13,7 @@ namespace AudioReader
         public static event BeatEventHandler BeatDetected;
 
         private static float[] _data;
-        private static int _targetFramerate = 60;
+        private static int _targetFramerate = Config.GetDefault("beatdetection/framerate", 60);
         private static double _targetFrametime = 1000d / _targetFramerate;
         private static DateTime _loopTime = DateTime.Now;
         private static int _bassSamples = _targetFramerate * 5;

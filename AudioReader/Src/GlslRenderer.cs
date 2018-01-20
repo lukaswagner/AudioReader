@@ -230,7 +230,7 @@ namespace AudioReader
         private double _time;
         private Vec2<int> _mouse = new Vec2<int>(0, 0);
         private Vec2<int> _resolution = new Vec2<int>(0, 0);
-        private int _textureResolution = 128;
+        private int _textureResolution;
         private float[] _audioData;
         private DateTime _lastBeat = DateTime.Now;
         private float _timeSinceLastBeat = 0f;
@@ -239,15 +239,18 @@ namespace AudioReader
 
         #region Main
 
-        public GlslRenderer(float[] audioData) : base(800, 600, GraphicsMode.Default, "GLSL Renderer")
+        public GlslRenderer(float[] audioData) : base(
+            Config.GetDefault("glsl/window_width", 800), 
+            Config.GetDefault("glsl/window_height", 600), 
+            GraphicsMode.Default, 
+            "GLSL Renderer")
         {
             _audioData = audioData;
 
             Mouse.Move += _mouseMove;
             Keyboard.KeyDown += _keyDown;
 
-            if (Config.Get("glsl/resolution", out int resolution))
-                _textureResolution = resolution;
+            _textureResolution = Config.GetDefault("glsl/resolution", 128);
 
             BeatDetection.BeatDetected += (object sender, EventArgs e) =>
             {
@@ -263,7 +266,7 @@ namespace AudioReader
             Log.Info("GLSL Renderer", "Setting up renderer...");
 
             _resizeWindow();
-            _compileShaders("Shader/GlslSandbox/BeatTest.frag");
+            _compileShaders("Shader/GlslSandbox/" + Config.GetDefault("glsl/shader", "Spectrum.frag"));
             _setupVBO();
             _setupFramebuffer();
             Log.Info("GLSL Renderer", "Renderer setup complete.");

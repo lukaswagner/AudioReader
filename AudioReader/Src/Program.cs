@@ -17,14 +17,10 @@ namespace AudioReader
 
         static void Main(string[] args)
         {
-            Log.Enable(Log.LogLevel.Verbose);
+            Log.Enable(Config.GetDefault("log/level", "Info"));
 
-            if (!Config.Get("audio/arraysize", out int arraySize))
-                arraySize = 2048;
-            _data = new float[arraySize];
-            if (!Config.Get("audio/reduced_arraysize", out int reducedArraySize))
-                reducedArraySize = 128;
-            _reducedData = new float[reducedArraySize];
+            _data = new float[Config.GetDefault("audio/arraysize", 2048)];
+            _reducedData = new float[Config.GetDefault("audio/reduced_arraysize", 128)];
 
             _checkEnabled("audio", "AudioReader", () =>
             {
@@ -47,13 +43,13 @@ namespace AudioReader
             _checkEnabled("glsl", "GLSL renderer", () =>
             {
                 _vis = new GlslRenderer(_reducedData);
-                _vis.Run(60, 60);
+                _vis.Run(60, Config.GetDefault("glsl/framerate", 60));
             });
         }
 
         private static void _checkEnabled(string xmlName, string logName, Action enabledCallback)
         {
-            bool enabled = Config.Get(xmlName + "/enabled", out bool enabledOut) && enabledOut;
+            bool enabled = Config.GetDefault(xmlName + "/enabled", false);
             Log.Info("Main", logName + (enabled ? " is enabled." : " is disabled."));
             if (enabled)
                 enabledCallback.Invoke();
@@ -66,7 +62,8 @@ namespace AudioReader
             for (int i = 0; i < BassWasapi.BASS_WASAPI_GetDeviceCount(); i++)
             {
                 var device = BassWasapi.BASS_WASAPI_GetDeviceInfo(i);
-                if (device.IsEnabled && device.IsLoopback)
+                bool listInputs = Config.GetDefault("audio/list_inputs", false);
+                if (device.IsEnabled && (device.IsLoopback || listInputs && device.IsInput))
                 {
                     Log.Info("BASS Setup", string.Format("{0} - {1}", i, device.name));
                 }
