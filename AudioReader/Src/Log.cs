@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 
 namespace AudioReader
 {
-    static class Log
+    internal static class Log
     {
         public enum LogLevel
         {
@@ -26,7 +26,7 @@ namespace AudioReader
 
             public void LogToConsole()
             {
-                if (_changeConsoleColor(LogLevel, out ConsoleColor consoleColor))
+                if (_changeConsoleColor(LogLevel, out var consoleColor))
                 {
                     Console.ForegroundColor = consoleColor;
                 }
@@ -110,16 +110,21 @@ namespace AudioReader
             }
         }
 
-        public static void Enable(String logLevelString)
+        public static void Enable(string logLevelString)
         {
             LogLevel logLevel;
             try
             {
                 logLevel = (LogLevel)System.Enum.Parse(typeof(LogLevel), logLevelString);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                logLevel = LogLevel.Info;
+                if (ex is ArgumentNullException
+                    || ex is ArgumentException
+                    || ex is OverflowException)
+                    logLevel = LogLevel.Info;
+                else
+                    throw;
             }
             Enable(logLevel);
         }

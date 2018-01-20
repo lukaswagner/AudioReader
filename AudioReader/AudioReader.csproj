@@ -78,6 +78,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Src\GlslRenderer.cs" />
     <Compile Include="Src\BeatDetection.cs" />
     <Compile Include="Src\HueController.cs" />
@@ -96,12 +97,15 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <CodeAnalysisDictionary Include="CustomDictionary.xml" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     <PostBuildEvent>
-      xcopy $(ProjectDir)Libraries\Bass\Native\* /y
-      xcopy $(ProjectDir)Shader\* Shader\ /y /s
+      xcopy $(ProjectDir)Libraries\Bass\Native\* /y /q
+      xcopy $(ProjectDir)Shader\* Shader\ /y /s /q
     </PostBuildEvent>
   </PropertyGroup>
 </Project>
