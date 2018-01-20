@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Security;
 using System.Text;
 using System.Xml;
@@ -101,7 +99,7 @@ namespace AudioReader
 
             XmlNode parent = _doc as XmlNode;
 
-            foreach(string node in split)
+            foreach (string node in split)
             {
                 XmlNode current = parent.SelectSingleNode(node);
                 if (current == null)

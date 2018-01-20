@@ -7,9 +7,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AudioReader
 {
@@ -194,7 +191,7 @@ namespace AudioReader
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)(_useNearest ? TextureMagFilter.Nearest : TextureMagFilter.Linear));
                 if (_program.TryGetUniform("texture", out int texture))
                     GL.Uniform1(texture, 0);
-                
+
                 GL.BindVertexArray(_parent._triangleArray);
                 GL.DrawArrays(PrimitiveType.Quads, 0, 4);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, previousMin);
@@ -207,7 +204,7 @@ namespace AudioReader
 
             public byte[] GetImage()
             {
-                if(!Ready)
+                if (!Ready)
                     return new byte[0];
                 byte[] image = new byte[_data.Length];
                 _data.CopyTo(image, 0);
@@ -242,9 +239,9 @@ namespace AudioReader
         #region Main
 
         public GlslRenderer(float[] audioData) : base(
-            Config.GetDefault("glsl/window_width", 800), 
-            Config.GetDefault("glsl/window_height", 600), 
-            GraphicsMode.Default, 
+            Config.GetDefault("glsl/window_width", 800),
+            Config.GetDefault("glsl/window_height", 600),
+            GraphicsMode.Default,
             "GLSL Renderer")
         {
             _audioData = audioData;
@@ -304,8 +301,8 @@ namespace AudioReader
             GL.GenBuffers(1, out _triangleBuffer);
             GL.BindBuffer(BufferTarget.ArrayBuffer, _triangleBuffer);
             GL.EnableClientState(ArrayCap.VertexArray);
-            GL.BufferData(BufferTarget.ArrayBuffer, 4 * 3 * sizeof(float), new float[] { -1f, -1f, 0f, 1f, -1f, 0f, 1f, 1f, 0f, -1f, 1f, 0f}, BufferUsageHint.StaticDraw);
-            if(!_textureProgram.TryGetAttribute("position", out int texPosition))
+            GL.BufferData(BufferTarget.ArrayBuffer, 4 * 3 * sizeof(float), new float[] { -1f, -1f, 0f, 1f, -1f, 0f, 1f, 1f, 0f, -1f, 1f, 0f }, BufferUsageHint.StaticDraw);
+            if (!_textureProgram.TryGetAttribute("position", out int texPosition))
                 Log.Error("GLSL Renderer", "Vertex shader of texture program doesn't use position attribute.");
             GL.VertexAttribPointer(texPosition, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
             GL.EnableVertexAttribArray(texPosition);
@@ -422,7 +419,7 @@ namespace AudioReader
 
             // set up or clean up output textures
             _setupOutput?.Invoke(this, EventArgs.Empty);
-            if(_leftoverIds.TryDequeue(out Tuple<uint, int> leftoverIds))
+            if (_leftoverIds.TryDequeue(out Tuple<uint, int> leftoverIds))
             {
                 GL.DeleteFramebuffer(leftoverIds.Item1);
                 GL.DeleteTexture(leftoverIds.Item2);

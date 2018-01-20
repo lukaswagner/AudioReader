@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
 using Un4seen.Bass;
 using Un4seen.BassWasapi;
 
@@ -99,7 +97,7 @@ namespace AudioReader
                 return false;
             }
 
-            if(!_checkError(BassWasapi.BASS_WASAPI_Start(), "BASS_WASAPI_Start"))
+            if (!_checkError(BassWasapi.BASS_WASAPI_Start(), "BASS_WASAPI_Start"))
             {
                 BassWasapi.BASS_WASAPI_Free();
                 Bass.BASS_Free();
@@ -123,7 +121,7 @@ namespace AudioReader
         {
             _dataValid = BassWasapi.BASS_WASAPI_GetData(_data, (int)(BASSData.BASS_DATA_FFT2048) | (int)(BASSData.BASS_DATA_FFT_INDIVIDUAL)) >= 0;
 
-            if(_dataValid)
+            if (_dataValid)
             {
                 float[] reducedData = new float[_reducedData.Length];
                 int valuesPerReducedValue = _data.Length / reducedData.Length;

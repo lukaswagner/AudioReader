@@ -1,13 +1,10 @@
+using Q42.HueApi;
+using Q42.HueApi.Interfaces;
+using Q42.HueApi.Models.Bridge;
+using Q42.HueApi.Models.Groups;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Q42.HueApi;
-using Q42.HueApi.Models.Bridge;
-using Q42.HueApi.Interfaces;
-using Q42.HueApi.Models.Groups;
 using System.Threading;
 
 namespace AudioReader
@@ -35,7 +32,6 @@ namespace AudioReader
                 case 0:
                     Log.Warn("Philips Hue", "No Philips Hue Bridge found.");
                     return;
-                    //break;
                 case 1:
                     ip = bridgeIPs.First().IpAddress;
                     Log.Info("Philips Hue", "Connecting to Philips Hue Bridge " + ip);
@@ -57,16 +53,20 @@ namespace AudioReader
 
             _client.Initialize(_key);
 
-            _beatCommand = new LightCommand();
-            _beatCommand.Brightness = 255;
-            _beatCommand.TransitionTime = new TimeSpan(0);
-            _beatCommand.Saturation = 200;
+            _beatCommand = new LightCommand
+            {
+                Brightness = 255,
+                TransitionTime = new TimeSpan(0),
+                Saturation = 200
+            };
 
-            _defaultCommand = new LightCommand();
-            _defaultCommand.Brightness = 20;
-            _defaultCommand.TransitionTime = new TimeSpan(0);
-            _defaultCommand.Saturation = 255;
-            
+            _defaultCommand = new LightCommand
+            {
+                Brightness = 20,
+                TransitionTime = new TimeSpan(0),
+                Saturation = 255
+            };
+
             _preserveColor = Config.GetDefault("philips_hue/preserve_color", false);
 
             _groups = _client.GetGroupsAsync().GetAwaiter().GetResult().Where((g) => g.Type == GroupType.Room);
@@ -74,7 +74,7 @@ namespace AudioReader
 
         private void _beatDetected(object sender, EventArgs e)
         {
-            if(_groups != null)
+            if (_groups != null)
                 foreach (var group in _groups)
                 {
                     int index = _rnd.Next(group.Lights.Count());
@@ -84,7 +84,7 @@ namespace AudioReader
 
         private async void _pulseLight(string light)
         {
-            if(!_preserveColor) _beatCommand.Hue = _rnd.Next(65535);
+            if (!_preserveColor) _beatCommand.Hue = _rnd.Next(65535);
             await _client.SendCommandAsync(_beatCommand, new List<string> { light });
             Thread.Sleep(5);
             await _client.SendCommandAsync(_defaultCommand, new List<string> { light });
