@@ -12,17 +12,14 @@ namespace AudioReader
         private static XmlDocument _doc = new XmlDocument();
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1810:InitializeReferenceTypeStaticFieldsInline")]
-        static Config()
-        {
-            _doc.Load("Config/config.xml");
-        }
+        static Config() => _doc.Load("Config/config.xml");
 
         public static bool Get<T>(string property, out T value)
         {
             value = default(T);
-            string valueString = "";
+            var valueString = "";
 
-            XmlNode node = _doc.SelectSingleNode("/config/" + property);
+            var node = _doc.SelectSingleNode("/config/" + property);
 
             if (node == null)
             {
@@ -54,7 +51,7 @@ namespace AudioReader
 
         public static T GetDefault<T>(string property, T defaultValue)
         {
-            if (Get(property, out T outValue))
+            if (Get<T>(property, out var outValue))
                 return outValue;
             else
                 return defaultValue;
@@ -62,9 +59,9 @@ namespace AudioReader
 
         public static bool Set(string property, object value)
         {
-            string value_string = value.ToString();
+            var value_string = value.ToString();
 
-            XmlNode node = _traveseOrBuildHierarchy("/config/" + property);
+            var node = _traveseOrBuildHierarchy("/config/" + property);
 
             node.InnerText = value_string;
 
@@ -95,13 +92,13 @@ namespace AudioReader
 
         private static XmlNode _traveseOrBuildHierarchy(string path)
         {
-            string[] split = path.Trim('/').Split('/');
+            var split = path.Trim('/').Split('/');
 
-            XmlNode parent = _doc as XmlNode;
+            var parent = _doc as XmlNode;
 
-            foreach (string node in split)
+            foreach (var node in split)
             {
-                XmlNode current = parent.SelectSingleNode(node);
+                var current = parent.SelectSingleNode(node);
                 if (current == null)
                     current = parent.AppendChild(_doc.CreateElement(node));
 
@@ -113,15 +110,15 @@ namespace AudioReader
 
         private static string Beautify(XmlDocument doc)
         {
-            StringBuilder stringBuilder = new StringBuilder();
-            XmlWriterSettings settings = new XmlWriterSettings
+            var stringBuilder = new StringBuilder();
+            var settings = new XmlWriterSettings
             {
                 Indent = true,
                 IndentChars = "    ",
                 NewLineChars = "\r\n",
                 NewLineHandling = NewLineHandling.Replace
             };
-            using (XmlWriter writer = XmlWriter.Create(stringBuilder, settings))
+            using (var writer = XmlWriter.Create(stringBuilder, settings))
             {
                 doc.Save(writer);
             }

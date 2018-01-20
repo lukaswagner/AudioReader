@@ -32,8 +32,8 @@ namespace AudioReader
         private class ShaderProgram
         {
             public int Id;
-            public Dictionary<String, int> UniformLocations = new Dictionary<string, int>();
-            public Dictionary<String, int> AttributeLocations = new Dictionary<string, int>();
+            public Dictionary<string, int> UniformLocations = new Dictionary<string, int>();
+            public Dictionary<string, int> AttributeLocations = new Dictionary<string, int>();
 
             ~ShaderProgram()
             {
@@ -47,15 +47,12 @@ namespace AudioReader
                 AttributeLocations.Clear();
             }
 
-            public void Use()
-            {
-                GL.UseProgram(Id);
-            }
+            public void Use() => GL.UseProgram(Id);
 
             public void CacheUniformLocations(params string[] labels)
             {
                 Log.Verbose("GLSL Renderer", "Caching uniforms for program " + Id + ".");
-                foreach (string label in labels)
+                foreach (var label in labels)
                 {
                     UniformLocations[label] = GL.GetUniformLocation(Id, label);
                     Log.Verbose("GLSL Renderer", "Cached uniform " + label + " with value " + UniformLocations[label] + ".");
@@ -65,22 +62,16 @@ namespace AudioReader
             public void CacheAttributeLocations(params string[] labels)
             {
                 Log.Verbose("GLSL Renderer", "Caching attributes for program " + Id + ".");
-                foreach (string label in labels)
+                foreach (var label in labels)
                 {
                     AttributeLocations[label] = GL.GetAttribLocation(Id, label);
                     Log.Verbose("GLSL Renderer", "Cached attribute " + label + " with value " + AttributeLocations[label] + ".");
                 }
             }
 
-            public bool TryGetUniform(string label, out int location)
-            {
-                return UniformLocations.TryGetValue(label, out location);
-            }
+            public bool TryGetUniform(string label, out int location) => UniformLocations.TryGetValue(label, out location);
 
-            public bool TryGetAttribute(string label, out int location)
-            {
-                return AttributeLocations.TryGetValue(label, out location);
-            }
+            public bool TryGetAttribute(string label, out int location) => AttributeLocations.TryGetValue(label, out location);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
@@ -138,7 +129,7 @@ namespace AudioReader
                 GL.BindVertexArray(_parent._triangleArray);
                 GL.BindBuffer(BufferTarget.ArrayBuffer, _parent._triangleBuffer);
                 GL.EnableClientState(ArrayCap.VertexArray);
-                if (!_program.TryGetAttribute("position", out int position))
+                if (!_program.TryGetAttribute("position", out var position))
                     Log.Error("GLSL Renderer", "Vertex shader of resample program doesn't use position attribute.");
                 GL.VertexAttribPointer(position, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
                 GL.EnableVertexAttribArray(position);
@@ -177,19 +168,22 @@ namespace AudioReader
                 GL.Viewport(0, 0, _resolution.X, _resolution.Y);
                 GL.Clear(ClearBufferMask.ColorBufferBit);
 
-                if (_program.TryGetUniform("originOffset", out int originOffset))
+                if (_program.TryGetUniform("originOffset", out var originOffset))
                     GL.Uniform2(originOffset, _originOffset.X, _originOffset.Y);
-                if (_program.TryGetUniform("originSize", out int originSize))
+                if (_program.TryGetUniform("originSize", out var originSize))
                     GL.Uniform2(originSize, _originSize.X, _originSize.Y);
 
                 GL.Enable(EnableCap.Texture2D);
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, _parent._texture);
+
+                #pragma warning disable IDE0007 // Impliziten Typ verwenden
                 GL.GetTexParameter(TextureTarget.ProxyTexture2D, GetTextureParameter.TextureMinFilter, out int previousMin);
                 GL.GetTexParameter(TextureTarget.ProxyTexture2D, GetTextureParameter.TextureMagFilter, out int previousMag);
+                #pragma warning restore IDE0007 // Impliziten Typ verwenden
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)(_useNearest ? TextureMinFilter.Nearest : TextureMinFilter.Linear));
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)(_useNearest ? TextureMagFilter.Nearest : TextureMagFilter.Linear));
-                if (_program.TryGetUniform("texture", out int texture))
+                if (_program.TryGetUniform("texture", out var texture))
                     GL.Uniform1(texture, 0);
 
                 GL.BindVertexArray(_parent._triangleArray);
@@ -206,7 +200,7 @@ namespace AudioReader
             {
                 if (!Ready)
                     return new byte[0];
-                byte[] image = new byte[_data.Length];
+                var image = new byte[_data.Length];
                 _data.CopyTo(image, 0);
                 return image;
             }
@@ -302,11 +296,11 @@ namespace AudioReader
             GL.BindBuffer(BufferTarget.ArrayBuffer, _triangleBuffer);
             GL.EnableClientState(ArrayCap.VertexArray);
             GL.BufferData(BufferTarget.ArrayBuffer, 4 * 3 * sizeof(float), new float[] { -1f, -1f, 0f, 1f, -1f, 0f, 1f, 1f, 0f, -1f, 1f, 0f }, BufferUsageHint.StaticDraw);
-            if (!_textureProgram.TryGetAttribute("position", out int texPosition))
+            if (!_textureProgram.TryGetAttribute("position", out var texPosition))
                 Log.Error("GLSL Renderer", "Vertex shader of texture program doesn't use position attribute.");
             GL.VertexAttribPointer(texPosition, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
             GL.EnableVertexAttribArray(texPosition);
-            if (!_screenProgram.TryGetAttribute("position", out int scrPosition))
+            if (!_screenProgram.TryGetAttribute("position", out var scrPosition))
                 Log.Error("GLSL Renderer", "Vertex shader of screen program doesn't use position attribute.");
             GL.VertexAttribPointer(scrPosition, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
             GL.EnableVertexAttribArray(scrPosition);
@@ -363,17 +357,17 @@ namespace AudioReader
         {
             int program;
 
-            using (StreamReader vs = new StreamReader(vsPath))
-            using (StreamReader fs = new StreamReader(fsPath))
+            using (var vs = new StreamReader(vsPath))
+            using (var fs = new StreamReader(fsPath))
             {
-                int vertexObject = GL.CreateShader(ShaderType.VertexShader);
-                int fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
+                var vertexObject = GL.CreateShader(ShaderType.VertexShader);
+                var fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
 
                 // Compile vertex shader
                 GL.ShaderSource(vertexObject, _applyPlaceholder(vs.ReadToEnd()));
                 GL.CompileShader(vertexObject);
-                GL.GetShaderInfoLog(vertexObject, out string info);
-                GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out int status_code);
+                GL.GetShaderInfoLog(vertexObject, out var info);
+                GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out var status_code);
 
                 if (status_code != 1)
                     throw new GraphicsException(info);
@@ -408,7 +402,7 @@ namespace AudioReader
 
         private string _applyPlaceholder(string shaderSource)
         {
-            string result = shaderSource.Replace("%AUDIODATASIZE%", _audioData.Length.ToString(CultureInfo.InvariantCulture));
+            var result = shaderSource.Replace("%AUDIODATASIZE%", _audioData.Length.ToString(CultureInfo.InvariantCulture));
             return result;
         }
 
@@ -419,7 +413,7 @@ namespace AudioReader
 
             // set up or clean up output textures
             _setupOutput?.Invoke(this, EventArgs.Empty);
-            if (_leftoverIds.TryDequeue(out Tuple<uint, int> leftoverIds))
+            if (_leftoverIds.TryDequeue(out var leftoverIds))
             {
                 GL.DeleteFramebuffer(leftoverIds.Item1);
                 GL.DeleteTexture(leftoverIds.Item2);
@@ -431,15 +425,15 @@ namespace AudioReader
             GL.Viewport(0, 0, _textureResolution, _textureResolution);
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            if (_textureProgram.TryGetUniform("time", out int texTime))
+            if (_textureProgram.TryGetUniform("time", out var texTime))
                 GL.Uniform1(texTime, (float)_time);
-            if (_textureProgram.TryGetUniform("mouse", out int texMouse))
+            if (_textureProgram.TryGetUniform("mouse", out var texMouse))
                 GL.Uniform2(texMouse, (float)_mouse.X / _resolution.X, (float)_mouse.Y / _resolution.Y);
-            if (_textureProgram.TryGetUniform("resolution", out int texResolution))
+            if (_textureProgram.TryGetUniform("resolution", out var texResolution))
                 GL.Uniform2(texResolution, (float)_textureResolution, _textureResolution);
-            if (_textureProgram.TryGetUniform("audioData", out int texAudioData))
+            if (_textureProgram.TryGetUniform("audioData", out var texAudioData))
                 GL.Uniform1(texAudioData, _audioData.Length, _audioData);
-            if (_textureProgram.TryGetUniform("lastBeat", out int texBeat))
+            if (_textureProgram.TryGetUniform("lastBeat", out var texBeat))
                 GL.Uniform1(texBeat, _timeSinceLastBeat);
 
             GL.BindVertexArray(_triangleArray);
@@ -457,7 +451,7 @@ namespace AudioReader
             GL.Enable(EnableCap.Texture2D);
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, _texture);
-            if (_screenProgram.TryGetUniform("texture", out int scrTexture))
+            if (_screenProgram.TryGetUniform("texture", out var scrTexture))
                 GL.Uniform1(scrTexture, 0);
 
             GL.BindVertexArray(_triangleArray);

@@ -5,7 +5,7 @@ using Un4seen.BassWasapi;
 
 namespace AudioReader
 {
-    class Program
+    internal static class Program
     {
         private static WASAPIPROC _callbackProcess;
         private static float[] _data;
@@ -14,7 +14,7 @@ namespace AudioReader
         private static GlslRenderer _vis;
         private static HueController _hueController;
 
-        static void Main()
+        private static void Main()
         {
             Log.Enable(Config.GetDefault("log/level", "Info"));
 
@@ -23,7 +23,7 @@ namespace AudioReader
 
             _checkEnabled("audio", "AudioReader", () =>
             {
-                if (!Config.Get("audio/device", out string deviceId))
+                if (!Config.Get<string>("audio/device", out var deviceId))
                     deviceId = _listDevices();
 
                 while (!_setUpAudio(deviceId))
@@ -48,7 +48,7 @@ namespace AudioReader
 
         private static void _checkEnabled(string xmlName, string logName, Action enabledCallback)
         {
-            bool enabled = Config.GetDefault(xmlName + "/enabled", false);
+            var enabled = Config.GetDefault(xmlName + "/enabled", false);
             Log.Info("Main", logName + (enabled ? " is enabled." : " is disabled."));
             if (enabled)
                 enabledCallback.Invoke();
@@ -58,10 +58,10 @@ namespace AudioReader
         {
             Log.Info("BASS Setup", "Available devices:");
 
-            for (int i = 0; i < BassWasapi.BASS_WASAPI_GetDeviceCount(); i++)
+            for (var i = 0; i < BassWasapi.BASS_WASAPI_GetDeviceCount(); i++)
             {
                 var device = BassWasapi.BASS_WASAPI_GetDeviceInfo(i);
-                bool listInputs = Config.GetDefault("audio/list_inputs", false);
+                var listInputs = Config.GetDefault("audio/list_inputs", false);
                 if (device.IsEnabled && (device.IsLoopback || listInputs && device.IsInput))
                 {
                     Log.Info("BASS Setup", string.Format(CultureInfo.InvariantCulture, "{0} - {1}", i, device.name));
@@ -74,9 +74,9 @@ namespace AudioReader
 
         private static bool _setUpAudio(string deviceId)
         {
-            int deviceId_int = Int32.Parse(deviceId, CultureInfo.InvariantCulture);
+            var deviceId_int = int.Parse(deviceId, CultureInfo.InvariantCulture);
 
-            BASS_WASAPI_DEVICEINFO devInfo = BassWasapi.BASS_WASAPI_GetDeviceInfo(deviceId_int);
+            var devInfo = BassWasapi.BASS_WASAPI_GetDeviceInfo(deviceId_int);
             if (devInfo == null)
             {
                 Log.Warn("BASS Setup", "Device " + deviceId + " does not exist.");
@@ -123,12 +123,12 @@ namespace AudioReader
 
             if (_dataValid)
             {
-                float[] reducedData = new float[_reducedData.Length];
-                int valuesPerReducedValue = _data.Length / reducedData.Length;
-                for (int i = 0; i < _data.Length; i++)
+                var reducedData = new float[_reducedData.Length];
+                var valuesPerReducedValue = _data.Length / reducedData.Length;
+                for (var i = 0; i < _data.Length; i++)
                 {
-                    bool isLeft = i % 2 == 0;
-                    int reducedIndex = i / 2 / valuesPerReducedValue;
+                    var isLeft = i % 2 == 0;
+                    var reducedIndex = i / 2 / valuesPerReducedValue;
                     reducedData[isLeft ? (reducedData.Length / 2 - 1) - reducedIndex : (reducedData.Length / 2) + reducedIndex] += _data[i] / valuesPerReducedValue;
                 }
                 reducedData.CopyTo(_reducedData, 0);

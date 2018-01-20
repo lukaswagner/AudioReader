@@ -24,8 +24,8 @@ namespace AudioReader
         {
             BeatDetection.BeatDetected += new BeatEventHandler(_beatDetected);
 
-            HttpBridgeLocator locator = new HttpBridgeLocator();
-            IEnumerable<LocatedBridge> bridgeIPs = locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+            var locator = new HttpBridgeLocator();
+            var bridgeIPs = locator.LocateBridgesAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
             string ip;
             switch (bridgeIPs.Count())
             {
@@ -76,7 +76,7 @@ namespace AudioReader
             if (_groups != null)
                 foreach (var group in _groups)
                 {
-                    int index = _rnd.Next(group.Lights.Count());
+                    var index = _rnd.Next(group.Lights.Count());
                     _pulseLight(group.Lights[index]);
                 }
         }

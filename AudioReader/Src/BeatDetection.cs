@@ -34,7 +34,7 @@ namespace AudioReader
             while (_run)
             {
                 double bassSum = 0;
-                for (int i = 0; i < 10; i++) bassSum += _data[i];
+                for (var i = 0; i < 10; i++) bassSum += _data[i];
 
                 if (_bassVolume.Count >= _bassSamples)
                     _bassVolume.Dequeue();
@@ -48,7 +48,7 @@ namespace AudioReader
                 {
                     if (_newBeat)
                     {
-                        BeatDetected?.Invoke(new Object(), EventArgs.Empty);
+                        BeatDetected?.Invoke(new object(), EventArgs.Empty);
                         _newBeat = false;
                         Log.Verbose("BeatDetection", "Beat detected.");
                     }
@@ -56,7 +56,7 @@ namespace AudioReader
                 else
                     _newBeat = true;
 
-                double loopTime = (DateTime.Now - _loopTime).TotalMilliseconds;
+                var loopTime = (DateTime.Now - _loopTime).TotalMilliseconds;
                 Thread.Sleep(Math.Max((int)(_targetFrametime - loopTime), 0));
                 _loopTime = DateTime.Now;
             }

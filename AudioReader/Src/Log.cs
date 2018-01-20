@@ -26,7 +26,7 @@ namespace AudioReader
 
             public void LogToConsole()
             {
-                if (_changeConsoleColor(LogLevel, out ConsoleColor consoleColor))
+                if (_changeConsoleColor(LogLevel, out var consoleColor))
                 {
                     Console.ForegroundColor = consoleColor;
                 }
@@ -110,7 +110,7 @@ namespace AudioReader
             }
         }
 
-        public static void Enable(String logLevelString)
+        public static void Enable(string logLevelString)
         {
             LogLevel logLevel;
             try
