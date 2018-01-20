@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 
 namespace AudioReader
 {
-    static class Log
+    internal static class Log
     {
         public enum LogLevel
         {
@@ -117,9 +117,14 @@ namespace AudioReader
             {
                 logLevel = (LogLevel)System.Enum.Parse(typeof(LogLevel), logLevelString);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                logLevel = LogLevel.Info;
+                if (ex is ArgumentNullException
+                    || ex is ArgumentException
+                    || ex is OverflowException)
+                    logLevel = LogLevel.Info;
+                else
+                    throw;
             }
             Enable(logLevel);
         }

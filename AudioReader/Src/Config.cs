@@ -1,19 +1,21 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Text;
 using System.Xml;
 
 namespace AudioReader
 {
-    class Config
+    internal static class Config
     {
-        private static XmlDocument _doc;
+        private static XmlDocument _doc = new XmlDocument();
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1810:InitializeReferenceTypeStaticFieldsInline")]
         static Config()
         {
-            _doc = new XmlDocument();
             _doc.Load("Config/config.xml");
         }
 
@@ -34,13 +36,21 @@ namespace AudioReader
 
             try
             {
-                value = (T)Convert.ChangeType(valueString, typeof(T));
+                value = (T)Convert.ChangeType(valueString, typeof(T), CultureInfo.InvariantCulture);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Log.Warn("Config", "Could not convert property " + property + " with value " + valueString + " to type " + typeof(T).Name + ".");
-                return false;
+                if (ex is InvalidCastException
+                    || ex is FormatException
+                    || ex is OverflowException
+                    || ex is ArgumentNullException)
+                {
+                    Log.Warn("Config", "Could not convert property " + property + " with value " + valueString + " to type " + typeof(T).Name + ".");
+                    return false;
+                }
+
+                throw;
             }
         }
 
@@ -64,10 +74,22 @@ namespace AudioReader
             {
                 File.WriteAllText("Config/config.xml", Beautify(_doc));
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Log.Error("Config", "Could not set property " + property + ":\n" + e.Message);
-                return false;
+                if (ex is ArgumentException
+                    || ex is ArgumentNullException
+                    || ex is PathTooLongException
+                    || ex is DirectoryNotFoundException
+                    || ex is IOException
+                    || ex is UnauthorizedAccessException
+                    || ex is NotSupportedException
+                    || ex is SecurityException)
+                {
+                    Log.Error("Config", "Could not set property " + property + ":\n" + ex.Message);
+                    return false;
+                }
+
+                throw;
             }
 
             return true;

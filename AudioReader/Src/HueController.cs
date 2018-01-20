@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace AudioReader
 {
-    class HueController
+    internal class HueController
     {
         private string _key;
         private Random _rnd = new Random();

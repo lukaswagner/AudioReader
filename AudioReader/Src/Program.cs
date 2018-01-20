@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using Un4seen.Bass;
 using Un4seen.BassWasapi;
@@ -15,7 +16,7 @@ namespace AudioReader
         private static GlslRenderer _vis;
         private static HueController _hueController;
 
-        static void Main(string[] args)
+        static void Main()
         {
             Log.Enable(Config.GetDefault("log/level", "Info"));
 
@@ -65,7 +66,7 @@ namespace AudioReader
                 bool listInputs = Config.GetDefault("audio/list_inputs", false);
                 if (device.IsEnabled && (device.IsLoopback || listInputs && device.IsInput))
                 {
-                    Log.Info("BASS Setup", string.Format("{0} - {1}", i, device.name));
+                    Log.Info("BASS Setup", string.Format(CultureInfo.InvariantCulture, "{0} - {1}", i, device.name));
                 }
             }
 
@@ -75,7 +76,7 @@ namespace AudioReader
 
         private static bool _setUpAudio(string deviceId)
         {
-            int deviceId_int = Int32.Parse(deviceId);
+            int deviceId_int = Int32.Parse(deviceId, CultureInfo.InvariantCulture);
 
             BASS_WASAPI_DEVICEINFO devInfo = BassWasapi.BASS_WASAPI_GetDeviceInfo(deviceId_int);
             if (devInfo == null)
@@ -122,15 +123,18 @@ namespace AudioReader
         {
             _dataValid = BassWasapi.BASS_WASAPI_GetData(_data, (int)(BASSData.BASS_DATA_FFT2048) | (int)(BASSData.BASS_DATA_FFT_INDIVIDUAL)) >= 0;
 
-            float[] reducedData = new float[_reducedData.Length];
-            int valuesPerReducedValue = _data.Length / reducedData.Length;
-            for(int i = 0; i < _data.Length; i++)
+            if(_dataValid)
             {
-                bool isLeft = i % 2 == 0;
-                int reducedIndex = i / 2 / valuesPerReducedValue;
-                reducedData[isLeft ? (reducedData.Length / 2 - 1) - reducedIndex : (reducedData.Length / 2) + reducedIndex] += _data[i] / valuesPerReducedValue;
+                float[] reducedData = new float[_reducedData.Length];
+                int valuesPerReducedValue = _data.Length / reducedData.Length;
+                for (int i = 0; i < _data.Length; i++)
+                {
+                    bool isLeft = i % 2 == 0;
+                    int reducedIndex = i / 2 / valuesPerReducedValue;
+                    reducedData[isLeft ? (reducedData.Length / 2 - 1) - reducedIndex : (reducedData.Length / 2) + reducedIndex] += _data[i] / valuesPerReducedValue;
+                }
+                reducedData.CopyTo(_reducedData, 0);
             }
-            reducedData.CopyTo(_reducedData, 0);
 
             return length;
         }

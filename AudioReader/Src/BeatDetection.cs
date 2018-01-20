@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace AudioReader
 {
-    public delegate void BeatEventHandler(object sender, EventArgs e);
-    class BeatDetection
+    internal delegate void BeatEventHandler(object sender, EventArgs e);
+    internal static class BeatDetection
     {
         public static event BeatEventHandler BeatDetected;
 

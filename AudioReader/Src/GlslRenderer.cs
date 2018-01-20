@@ -1,10 +1,11 @@
-﻿using OpenTK;
+using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace AudioReader
 {
-    class GlslRenderer : GameWindow
+    internal class GlslRenderer : GameWindow
     {
         #region HelperClasses
 
@@ -85,6 +86,7 @@ namespace AudioReader
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
         public class OutputTexture
         {
             private static ShaderProgram _program;
@@ -377,7 +379,7 @@ namespace AudioReader
                 GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out int status_code);
 
                 if (status_code != 1)
-                    throw new ApplicationException(info);
+                    throw new GraphicsException(info);
 
                 // Compile fragment shader
                 GL.ShaderSource(fragmentObject, _applyPlaceholder(fs.ReadToEnd()));
@@ -386,7 +388,7 @@ namespace AudioReader
                 GL.GetShader(fragmentObject, ShaderParameter.CompileStatus, out status_code);
 
                 if (status_code != 1)
-                    throw new ApplicationException(info);
+                    throw new GraphicsException(info);
 
                 program = GL.CreateProgram();
                 GL.AttachShader(program, vertexObject);
@@ -396,7 +398,7 @@ namespace AudioReader
                 GL.GetProgram(program, GetProgramParameterName.LinkStatus, out status_code);
 
                 if (status_code != 1)
-                    throw new ApplicationException(info);
+                    throw new GraphicsException(info);
 
                 GL.DetachShader(program, vertexObject);
                 GL.DeleteShader(vertexObject);
@@ -409,7 +411,7 @@ namespace AudioReader
 
         private string _applyPlaceholder(string shaderSource)
         {
-            string result = shaderSource.Replace("%AUDIODATASIZE%", _audioData.Length.ToString());
+            string result = shaderSource.Replace("%AUDIODATASIZE%", _audioData.Length.ToString(CultureInfo.InvariantCulture));
             return result;
         }
 
