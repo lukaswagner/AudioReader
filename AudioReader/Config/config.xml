@@ -26,7 +26,7 @@
         <window_width>800</window_width>
         <window_height>600</window_height>
         <framerate>60</framerate>
-        <shader>Spectrum.frag</shader>
+        <shader>SpotifyTest.frag</shader>
         <enabled>true</enabled>
         <resolution>1024</resolution>
     </glsl>
