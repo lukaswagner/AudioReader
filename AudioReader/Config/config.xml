@@ -10,6 +10,9 @@
         <arraysize>2048</arraysize>
         <reduced_arraysize>1024</reduced_arraysize>
     </audio>
+    <spotify>
+        <enabled>true</enabled>
+    </spotify>
     <beatdetection>
         <enabled>true</enabled>
         <framerate>60</framerate>
