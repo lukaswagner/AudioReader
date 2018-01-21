@@ -227,6 +227,13 @@ namespace AudioReader
         private float[] _audioData;
         private DateTime _lastBeat = DateTime.Now;
         private float _timeSinceLastBeat = 0f;
+        private DateTime _lastMouse = DateTime.Now;
+        private float _timeSinceLastMouse = 0f;
+        private float _trackProgress = 0f;
+        private bool _isPlaying = false;
+        private byte[] _albumArtArray;
+        private bool _albumArtUpdated;
+        private uint _albumArt;
 
         #endregion Member
 
@@ -249,6 +256,29 @@ namespace AudioReader
             {
                 _lastBeat = DateTime.Now;
             };
+
+            Spotify.OnPlayingChanged += (bool isPlaying) => _isPlaying = isPlaying;
+            Spotify.OnTimeChanged += (int time, int totalTime, double progress) => _trackProgress = (float)progress;
+            Spotify.OnTrackChanged += (string title, string artist, string album, byte[] art) =>
+            {
+                _albumArtArray = art;
+                _albumArtUpdated = true;
+            };
+
+            _isPlaying = Spotify.IsPlaying();
+            _trackProgress = (float)Spotify.GetTrackProgressRatio();
+            if(Spotify.GetAlbumArt(out var newArt))
+            {
+                _albumArtArray = newArt;
+                _albumArtUpdated = true;
+            }
+
+            GL.GenTextures(1, out _albumArt);
+            GL.BindTexture(TextureTarget.Texture2D, _albumArt);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
         }
 
         protected override void OnLoad(EventArgs e)
@@ -340,7 +370,7 @@ namespace AudioReader
                 _textureProgram.Reset();
             _textureProgram.Id = _createProgram("Shader/GlslSandboxFramework/CopyPositionAttribute.vert", fsPath);
             _textureProgram.Use();
-            _textureProgram.CacheUniformLocations("time", "mouse", "resolution", "audioData", "lastBeat");
+            _textureProgram.CacheUniformLocations("time", "mouse", "resolution", "audioData", "lastBeat", "lastMouse", "trackProgress", "isPlaying", "albumArt");
             _textureProgram.CacheAttributeLocations("position");
 
             if (_screenProgram.Id > 0)
@@ -410,6 +440,14 @@ namespace AudioReader
         {
             _time = (DateTime.Now - _startTime).TotalMilliseconds;
             _timeSinceLastBeat = (float)((DateTime.Now - _lastBeat).TotalMilliseconds);
+            _timeSinceLastMouse = (float)((DateTime.Now - _lastMouse).TotalMilliseconds);
+            if(_albumArtUpdated)
+            {
+                _albumArtUpdated = false;
+                GL.BindTexture(TextureTarget.Texture2D, _albumArt);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, 640, 640, 0, PixelFormat.Rgb, PixelType.UnsignedByte, _albumArtArray);
+            }
+
 
             // set up or clean up output textures
             _setupOutput?.Invoke(this, EventArgs.Empty);
@@ -435,6 +473,16 @@ namespace AudioReader
                 GL.Uniform1(texAudioData, _audioData.Length, _audioData);
             if (_textureProgram.TryGetUniform("lastBeat", out var texBeat))
                 GL.Uniform1(texBeat, _timeSinceLastBeat);
+            if (_textureProgram.TryGetUniform("lastMouse", out var texLMouse))
+                GL.Uniform1(texLMouse, _timeSinceLastMouse);
+            if (_textureProgram.TryGetUniform("trackProgress", out var texProgress))
+                GL.Uniform1(texProgress, _trackProgress);
+            if (_textureProgram.TryGetUniform("isPlaying", out var texPlaying))
+                GL.Uniform1(texPlaying, _isPlaying ? 1 : 0);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, _albumArt);
+            if (_textureProgram.TryGetUniform("albumArt", out var texArt))
+                GL.Uniform1(texArt, 0);
 
             GL.BindVertexArray(_triangleArray);
             GL.DrawArrays(PrimitiveType.Quads, 0, 4);
@@ -447,8 +495,7 @@ namespace AudioReader
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.Viewport(0, 0, _resolution.X, _resolution.Y);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            GL.Enable(EnableCap.Texture2D);
+            
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, _texture);
             if (_screenProgram.TryGetUniform("texture", out var scrTexture))
@@ -468,6 +515,7 @@ namespace AudioReader
         {
             _mouse.X = e.X;
             _mouse.Y = e.Y;
+            _lastMouse = DateTime.Now;
         }
 
         private void _keyDown(object sender, KeyboardKeyEventArgs e)
@@ -480,6 +528,12 @@ namespace AudioReader
                     WindowState = WindowState.Normal;
                 else
                     WindowState = WindowState.Fullscreen;
+
+            if (e.Key == Key.Space)
+                if (_isPlaying)
+                    Spotify.Pause();
+                else
+                    Spotify.Play();
         }
 
         #endregion Events
