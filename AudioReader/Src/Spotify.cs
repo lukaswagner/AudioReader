@@ -2,7 +2,9 @@ using SpotifyAPI.Local;
 using SpotifyAPI.Local.Enums;
 using SpotifyAPI.Local.Models;
 using System;
+using System.Drawing;
 using System.Globalization;
+using System.IO;
 
 namespace AudioReader
 {
@@ -55,7 +57,7 @@ namespace AudioReader
                 var title = args.NewTrack.TrackResource.Name;
                 var artist = args.NewTrack.ArtistResource.Name;
                 var album = args.NewTrack.AlbumResource.Name;
-                var art = args.NewTrack.GetAlbumArtAsByteArray(AlbumArtSize.Size640);
+                var art = _jpgToRGB(args.NewTrack.GetAlbumArtAsByteArray(AlbumArtSize.Size640));
                 Log.Info("Spotify", "Track changed. New track: " + title + " by " + artist + " on " + album + ".");
                 OnTrackChanged?.Invoke(title, artist, album, art);
             };
@@ -174,7 +176,8 @@ namespace AudioReader
             if (!Ready)
                 return false;
             _updateStatus();
-            art = _status.Track.GetAlbumArtAsByteArray(AlbumArtSize.Size640);
+            var jpg = _status.Track.GetAlbumArtAsByteArray(AlbumArtSize.Size640);
+            art = _jpgToRGB(jpg);
             return true;
         }
 
@@ -277,5 +280,29 @@ namespace AudioReader
         internal static void Next() => _spotify.Skip();
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal static void Previous() => _spotify.Previous();
+
+        private static byte[] _jpgToRGB(byte[] jpg)
+        {
+            using (var inStream = new MemoryStream(jpg))
+            {
+                var bitmap = (Bitmap)Image.FromStream(inStream);
+                return _getRGBValues(bitmap);
+            }
+        }
+
+        private static byte[] _getRGBValues(Bitmap bmp)
+        {
+            var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
+            var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly, bmp.PixelFormat);
+            var ptr = bmpData.Scan0;
+            var bytes = bmpData.Stride * bmp.Height;
+            var brgValues = new byte[bytes];
+            System.Runtime.InteropServices.Marshal.Copy(ptr, brgValues, 0, bytes); bmp.UnlockBits(bmpData);
+            var rgbValues = new byte[bytes];
+            for (var y = 0; y < bmp.Height; y++)
+                for (var x = 0; x < bmpData.Stride; x++)
+                    rgbValues[y * bmpData.Stride + x] = brgValues[(bmpData.Height - 1 - y) * bmpData.Stride + x + (x % 3 == 0 ? 2 : ((x + 1) % 3 == 0 ? -2 : 0))];
+            return rgbValues;
+        }
     }
 }
