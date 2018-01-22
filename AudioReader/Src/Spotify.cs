@@ -103,172 +103,77 @@ namespace AudioReader
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool IsPlaying()
+        // a safe runner for getter functions
+        private static bool _safeGet<T>(out T result, Func<T> getter)
         {
-            if (!Ready)
-                return false;
-            _updateStatus();
-            return _status.Playing;
-        }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool GetTitle(out string title)
-        {
-            title = "";
-            if (!Ready)
-                return false;
-            _updateStatus();
-            title = _status.Track.TrackResource.Name;
+            result = default(T);
+            try
+            {
+                if (!Ready)
+                    return false;
+                _updateStatus();
+                result = getter.Invoke();
+            }
+            catch (Exception ex)
+            {
+                if (ex is NullReferenceException)
+                    return false;
+                throw;
+            }
             return true;
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static string GetTitle()
-        {
-            if (GetTitle(out var title))
-                return title;
-            return "";
-        }
+        internal static bool IsPlaying() => _safeGet(out var result, () => _status.Playing) && result;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool GetArtist(out string artist)
-        {
-            artist = "";
-            if (!Ready)
-                return false;
-            _updateStatus();
-            artist = _status.Track.ArtistResource.Name;
-            return true;
-        }
+        internal static bool GetTitle(out string title) => _safeGet(out title, () => _status.Track.TrackResource.Name);
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static string GetArtist()
-        {
-            if (GetArtist(out var artist))
-                return artist;
-            return "";
-        }
+        internal static string GetTitle() => GetTitle(out var title) ? title : "";
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool GetAlbum(out string album)
-        {
-            album = "";
-            if (!Ready)
-                return false;
-            _updateStatus();
-            album = _status.Track.AlbumResource.Name;
-            return true;
-        }
+        internal static bool GetArtist(out string artist) => _safeGet(out artist, () => _status.Track.ArtistResource.Name);
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static string GetAlbum()
-        {
-            if (GetAlbum(out var album))
-                return album;
-            return "";
-        }
+        internal static string GetArtist() => GetArtist(out var artist) ? artist : "";
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool GetAlbumArt(out byte[] art)
-        {
-            art = new byte[0];
-            if (!Ready)
-                return false;
-            _updateStatus();
-            var jpg = _status.Track.GetAlbumArtAsByteArray(AlbumArtSize.Size640);
-            art = _jpgToRGB(jpg);
-            return true;
-        }
+        internal static bool GetAlbum(out string album) => _safeGet(out album, () => _status.Track.AlbumResource.Name);
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal static string GetAlbum() => GetAlbum(out var album) ? album : "";
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal static bool GetAlbumArt(out byte[] art) => _safeGet(out art, () => _jpgToRGB(_status.Track.GetAlbumArtAsByteArray(AlbumArtSize.Size640)));
 
         // no simple accessor for art - this should always be checked for success!
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool GetTrackLength(out int time)
-        {
-            time = 0;
-            if (!Ready)
-                return false;
-            _updateStatus();
-            time = _status.Track.Length;
-            return true;
-        }
+        internal static bool GetTrackLength(out int time) => _safeGet(out time, () => _status.Track.Length);
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static int GetTrackLength()
-        {
-            if (GetTrackLength(out var time))
-                return time;
-            return 0;
-        }
+        internal static int GetTrackLength() => GetTrackLength(out var time) ? time : 0;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool GetTrackLength(out int minutes, out int seconds)
-        {
-            minutes = 0;
-            seconds = 0;
-            if (!Ready)
-                return false;
-            _updateStatus();
-            minutes = _status.Track.Length / 60;
-            minutes = _status.Track.Length % 60;
-            return true;
-        }
+        internal static bool GetTrackLength(out int minutes, out int seconds) => GetTrackLength(out var time) & ((minutes = time / 60) > 0 | (seconds = time % 60) > 0);
 
         // no simple accessor for track length with minutes and seconds - would create ambiguity
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool GetTrackProgressRatio(out double progress)
-        {
-            progress = 0;
-            if (!Ready)
-                return false;
-            _updateStatus();
-            progress = _status.PlayingPosition / _status.Track.Length;
-            return true;
-        }
+        internal static bool GetTrackProgressRatio(out double progress) => _safeGet(out progress, () => _status.PlayingPosition / _status.Track.Length);
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static double GetTrackProgressRatio()
-        {
-            if (GetTrackProgressRatio(out var progress))
-                return progress;
-            return 0;
-        }
+        internal static double GetTrackProgressRatio() => GetTrackProgressRatio(out var progress) ? progress : 0;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool GetTrackProgress(out int time)
-        {
-            time = 0;
-            if (!Ready)
-                return false;
-            _updateStatus();
-            time = (int)(_status.PlayingPosition / _status.Track.Length);
-            return true;
-        }
+        internal static bool GetTrackProgress(out int time) => _safeGet(out time, () => (int)(_status.PlayingPosition / _status.Track.Length));
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static int GetTrackProgress()
-        {
-            if (GetTrackProgress(out var time))
-                return time;
-            return 0;
-        }
+        internal static int GetTrackProgress() => GetTrackProgress(out var time) ? time : 0;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool GetTrackProgress(out int minutes, out int seconds)
-        {
-            minutes = 0;
-            seconds = 0;
-            if (!Ready)
-                return false;
-            _updateStatus();
-            if (!GetTrackProgress(time: out var time))
-                return false;
-            minutes = time / 60;
-            minutes = time % 60;
-            return true;
-        }
+        internal static bool GetTrackProgress(out int minutes, out int seconds) => GetTrackProgress(out var time) & ((minutes = time / 60) > 0 | (seconds = time % 60) > 0);
 
         // no simple accessor for track progress with minutes and seconds - would create ambiguity
 
@@ -286,23 +191,18 @@ namespace AudioReader
             using (var inStream = new MemoryStream(jpg))
             {
                 var bitmap = (Bitmap)Image.FromStream(inStream);
-                return _getRGBValues(bitmap);
+                var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+                var bmpData = bitmap.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly, bitmap.PixelFormat);
+                var ptr = bmpData.Scan0;
+                var bytes = bmpData.Stride * bitmap.Height;
+                var brgValues = new byte[bytes];
+                System.Runtime.InteropServices.Marshal.Copy(ptr, brgValues, 0, bytes); bitmap.UnlockBits(bmpData);
+                var rgbValues = new byte[bytes];
+                for (var y = 0; y < bitmap.Height; y++)
+                    for (var x = 0; x < bmpData.Stride; x++)
+                        rgbValues[y * bmpData.Stride + x] = brgValues[(bmpData.Height - 1 - y) * bmpData.Stride + x + (x % 3 == 0 ? 2 : ((x + 1) % 3 == 0 ? -2 : 0))];
+                return rgbValues;
             }
-        }
-
-        private static byte[] _getRGBValues(Bitmap bmp)
-        {
-            var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-            var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly, bmp.PixelFormat);
-            var ptr = bmpData.Scan0;
-            var bytes = bmpData.Stride * bmp.Height;
-            var brgValues = new byte[bytes];
-            System.Runtime.InteropServices.Marshal.Copy(ptr, brgValues, 0, bytes); bmp.UnlockBits(bmpData);
-            var rgbValues = new byte[bytes];
-            for (var y = 0; y < bmp.Height; y++)
-                for (var x = 0; x < bmpData.Stride; x++)
-                    rgbValues[y * bmpData.Stride + x] = brgValues[(bmpData.Height - 1 - y) * bmpData.Stride + x + (x % 3 == 0 ? 2 : ((x + 1) % 3 == 0 ? -2 : 0))];
-            return rgbValues;
         }
     }
 }
