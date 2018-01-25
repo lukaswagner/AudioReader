@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace AudioReader
 {
@@ -72,6 +73,63 @@ namespace AudioReader
             public bool TryGetUniform(string label, out int location) => UniformLocations.TryGetValue(label, out location);
 
             public bool TryGetAttribute(string label, out int location) => AttributeLocations.TryGetValue(label, out location);
+        }
+
+        private class Pipeline
+        {
+            
+        }
+
+        private class PipelineStep
+        {
+
+        }
+
+        private class TextureSet
+        {
+            public Vec2<int> Resolution { get; private set; }
+            private Vec2<float> _offset;
+            private Vec2<float> _size;
+            private int[] _buffers;
+            private uint[] _textures;
+
+            public TextureSet(int resolutionX, int resolutionY, int number, double offsetX = 0, double offsetY = 0, double sizeX = 1, double sizeY = 1)
+            {
+                Resolution = new Vec2<int>(resolutionX, resolutionY);
+                _offset = new Vec2<float>((float)offsetX, (float)offsetY);
+                _size = new Vec2<float>((float)sizeX, (float)sizeY);
+
+                _buffers = new int[number];
+                _textures = new uint[number];
+
+                GL.GenFramebuffers(number, _buffers);
+                GL.GenTextures(number, _textures);
+
+                foreach(var index in Enumerable.Range(0, number))
+                {
+                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, _buffers[index]);
+                    GL.BindTexture(TextureTarget.Texture2D, _textures[index]);
+                    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, Resolution.X, Resolution.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
+                    GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, _textures[index], 0);
+                    GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
+                    if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
+                    {
+                        Log.Error("OutputTexture", "Could not setup framebuffer: " + GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer));
+                        return;
+                    }
+                }
+                GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            }
+
+            ~TextureSet()
+            {
+                GL.DeleteTextures(_buffers.Length, _buffers);
+                GL.DeleteFramebuffers(_textures.Length, _textures);
+            }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
