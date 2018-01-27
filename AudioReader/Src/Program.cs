@@ -38,6 +38,8 @@ namespace AudioReader
                 _hueController.TurnAllTheLightsOff();
             });
 
+            _checkEnabled("spotify", "Spotify integration", () => Spotify.Setup());
+
             // _vis.Run() stops further execution until vis window is closed - call last
             _checkEnabled("glsl", "GLSL renderer", () =>
             {
