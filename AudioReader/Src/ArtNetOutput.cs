@@ -19,7 +19,10 @@ namespace AudioReader
 
         private static ArtNetSocket s_artnet = new ArtNetSocket();
         private static IPEndPoint endPoint;
-        private static DateTime _lastTime = DateTime.Now; 
+
+        private static ArtNetDevice[] devices = new ArtNetDevice[0];
+
+        private static DateTime _lastTime = DateTime.Now;
         private static Thread _artNetOutputLoopThread = new Thread(_artNetOutputLoop);
         private static bool _run = false;
 
@@ -36,20 +39,22 @@ namespace AudioReader
             s_artnet.EnableBroadcast = true;
             s_artnet.Open(lanAdress, IPAddress.Parse("255.255.255.0"));
 
-            Config.Get<string>("artnet/devices/device[1]/ip", out var ipString);
-            Log.Debug("ArtNet", "destIP: " + ipString);
-            
-            var destIPBytes = IPAddress.Parse(ipString).GetAddressBytes();
-            long destIP = 0;
-
-            long fac = 1;
-            foreach (var b in destIPBytes)
+            int i = 1;
+            while(Config.NodeExists("artnet/devices/device[" + i + "]"))
             {
-                destIP += b * fac;
-                fac *= 0x100;
-            }
+                Config.Get<string>("artnet/devices/device[" + i + "]/ip", out var ip);
+                Config.Get<uint>(   "artnet/devices/device[" + i + "]/width_px", out var width_px);
+                Config.Get<uint>(   "artnet/devices/device[" + i + "]/height_px", out var height_px);
+                Config.Get<float>( "artnet/devices/device[" + i + "]/width_m", out var width_m);
+                Config.Get<float>( "artnet/devices/device[" + i + "]/height_m", out var height_m);
+                Config.Get<bool>(  "artnet/devices/device[" + i + "]/patch_mode/snake", out var snake);
+                Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/direction", out var direction);
+                Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/start_x", out var start_x);
+                Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/start_y", out var start_y);
 
-            endPoint = new IPEndPoint(destIP, 6454);
+                var device = new ArtNetDevice(ip, width_px, height_px, width_m, height_m, snake, direction, start_x, start_y);
+                i++;
+            }
 
             _run = true;
             _artNetOutputLoopThread.Start();
@@ -62,17 +67,17 @@ namespace AudioReader
                 if((DateTime.Now - _lastTime).Milliseconds > 16)
                 {
                     _lastTime = DateTime.Now;
-                    ArtNetDmxPacket toSend = new ArtNetDmxPacket();
-                    Random rnd = new Random();
+                    //ArtNetDmxPacket toSend = new ArtNetDmxPacket();
+                    //Random rnd = new Random();
 
-                    toSend.DmxData = new byte[SENDER_LENGTH];
+                    //toSend.DmxData = new byte[SENDER_LENGTH];
 
-                    toSend.Universe = (short)1;
+                    //toSend.Universe = (short)1;
 
-                    for (uint i = 0; i < SENDER_LENGTH; i++) toSend.DmxData[i] = 0;
-                    toSend.DmxData[(DateTime.Now.Second / 2) * 3] = 255;
+                    //for (uint i = 0; i < SENDER_LENGTH; i++) toSend.DmxData[i] = 0;
+                    //toSend.DmxData[(DateTime.Now.Second / 2) * 3] = 255;
 
-                    s_artnet.SendTo(toSend.ToArray(), endPoint);
+                    //s_artnet.SendTo(toSend.ToArray(), endPoint);
                 }
             }
         }
