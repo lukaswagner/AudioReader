@@ -35,8 +35,11 @@ namespace AudioReader
 
             s_artnet.EnableBroadcast = true;
             s_artnet.Open(lanAdress, IPAddress.Parse("255.255.255.0"));
+
+            Config.Get<string>("artnet/devices/device[1]/ip", out var ipString);
+            Log.Debug("ArtNet", "destIP: " + ipString);
             
-            var destIPBytes = IPAddress.Parse("192.168.1.100").GetAddressBytes();
+            var destIPBytes = IPAddress.Parse(ipString).GetAddressBytes();
             long destIP = 0;
 
             long fac = 1;
