@@ -57,6 +57,12 @@ namespace AudioReader
                 return defaultValue;
         }
 
+        public static bool NodeExists(string property)
+        {
+            var node = _doc.SelectSingleNode("/config/" + property);
+            return node != null;
+        }
+
         public static bool Set(string property, object value)
         {
             var value_string = value.ToString();
