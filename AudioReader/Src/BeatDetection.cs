@@ -1,19 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace AudioReader
 {
-    public delegate void BeatEventHandler(object sender, EventArgs e);
-    class BeatDetection
+    internal delegate void BeatEventHandler(object sender, EventArgs e);
+    internal static class BeatDetection
     {
         public static event BeatEventHandler BeatDetected;
 
         private static float[] _data;
-        private static int _targetFramerate = 60;
+        private static int _targetFramerate = Config.GetDefault("beatdetection/framerate", 60);
         private static double _targetFrametime = 1000d / _targetFramerate;
         private static DateTime _loopTime = DateTime.Now;
         private static int _bassSamples = _targetFramerate * 5;
@@ -36,7 +34,7 @@ namespace AudioReader
             while (_run)
             {
                 double bassSum = 0;
-                for (int i = 0; i < 10; i++) bassSum += _data[i];
+                for (var i = 0; i < 10; i++) bassSum += _data[i];
 
                 if (_bassVolume.Count >= _bassSamples)
                     _bassVolume.Dequeue();
@@ -50,7 +48,7 @@ namespace AudioReader
                 {
                     if (_newBeat)
                     {
-                        BeatDetected?.Invoke(new Object(), EventArgs.Empty);
+                        BeatDetected?.Invoke(new object(), EventArgs.Empty);
                         _newBeat = false;
                         Log.Verbose("BeatDetection", "Beat detected.");
                     }
@@ -58,7 +56,7 @@ namespace AudioReader
                 else
                     _newBeat = true;
 
-                double loopTime = (DateTime.Now - _loopTime).TotalMilliseconds;
+                var loopTime = (DateTime.Now - _loopTime).TotalMilliseconds;
                 Thread.Sleep(Math.Max((int)(_targetFrametime - loopTime), 0));
                 _loopTime = DateTime.Now;
             }
