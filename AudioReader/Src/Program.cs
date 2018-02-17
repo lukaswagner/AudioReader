@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Threading;
 using Un4seen.Bass;
 using Un4seen.BassWasapi;
 
@@ -11,8 +12,8 @@ namespace AudioReader
         private static float[] _data;
         private static float[] _reducedData;
         private static bool _dataValid = false;
-        private static GlslRenderer _vis;
         private static HueController _hueController;
+        public static ManualResetEvent RendererSetUp = new ManualResetEvent(false);
 
         private static void Main()
         {
@@ -39,13 +40,14 @@ namespace AudioReader
             });
 
             _checkEnabled("spotify", "Spotify integration", () => Spotify.Setup());
+            
+            _checkEnabled("glsl", "GLSL renderer", () => GlslRenderer.Enable(_reducedData));
 
-            // _vis.Run() stops further execution until vis window is closed - call last
-            _checkEnabled("glsl", "GLSL renderer", () =>
-            {
-                _vis = new GlslRenderer(_reducedData);
-                _vis.Run(60, Config.GetDefault("glsl/framerate", 60));
-            });
+            RendererSetUp.WaitOne();
+
+            _checkEnabled("gloutput", "OpenGL Output", () => GlOutput.Enable());
+
+            Log.Info("Main", "Everything set up.");
         }
 
         private static void _checkEnabled(string xmlName, string logName, Action enabledCallback)
