@@ -39,6 +39,7 @@ namespace AudioReader
             });
 
             _checkEnabled("spotify", "Spotify integration", () => Spotify.Setup());
+            _checkEnabled("artnet", "ArtNet output", () => ArtNetOutput.Enable());
 
             // _vis.Run() stops further execution until vis window is closed - call last
             _checkEnabled("glsl", "GLSL renderer", () =>

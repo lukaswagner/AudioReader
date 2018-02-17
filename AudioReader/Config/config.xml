@@ -22,6 +22,9 @@
         <key>BF2f0oKYa4yj0oheEf4KUQuSZTs5ASROmdTOE7nU</key>
         <preserve_color>false</preserve_color>
     </philips_hue>
+    <artnet>
+        <enabled>true</enabled>
+    </artnet>
     <glsl>
         <window_width>800</window_width>
         <window_height>600</window_height>
