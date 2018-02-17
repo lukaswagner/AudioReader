@@ -44,6 +44,10 @@ namespace AudioReader
             _checkEnabled("glsl", "GLSL renderer", () => GlslRenderer.Enable(_reducedData));
 
             RendererSetUp.WaitOne();
+
+            _checkEnabled("gloutput", "OpenGL Output", () => GlOutput.Enable());
+
+            Log.Info("Main", "Everything set up.");
         }
 
         private static void _checkEnabled(string xmlName, string logName, Action enabledCallback)
