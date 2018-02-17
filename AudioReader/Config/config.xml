@@ -61,4 +61,9 @@
         <enabled>true</enabled>
         <resolution>1024</resolution>
     </glsl>
+    <gloutput>
+        <framerate>60</framerate>
+        <enabled>false</enabled>
+        <resolution>200</resolution>
+    </gloutput>
 </config>

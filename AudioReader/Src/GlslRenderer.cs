@@ -7,29 +7,81 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Threading;
 
 namespace AudioReader
 {
+    internal class OutputTexture
+    {
+        public bool Ready;
+        public byte[] Data;
+    }
+
     internal class GlslRenderer : GameWindow
     {
         #region HelperClasses
 
-        private delegate void SetupOutputHandler(object sender, EventArgs e);
-        private delegate void RenderOutputHandler(object sender, EventArgs e);
+        private delegate void SetupTextureSetEvent(object sender, EventArgs e);
 
-        private struct Vec2<T>
+        private struct Vector2i
         {
-            public T X;
-            public T Y;
+            public int X;
+            public int Y;
 
-            public Vec2(T x, T y)
+            public Vector2i(int x, int y)
             {
                 X = x;
                 Y = y;
             }
+
+            public static implicit operator Vector2(Vector2i vector2i) => new Vector2(vector2i.X, vector2i.Y);
         }
 
-        private class ShaderProgram
+        private class Uniform
+        {
+            public string Name;
+            private Type _type;
+            private Func<object> _getter;
+
+            public Uniform(string name, Type type, Func<object> getter)
+            {
+                Name = name;
+                _type = type;
+                _getter = getter;
+            }
+
+            public void Apply(ShaderProgram shaderProgram, object uniformValue = null)
+            {
+                if (shaderProgram.TryGetUniform(Name, out var position))
+                {
+                    var value = uniformValue ?? _getter.Invoke();
+                    if (_type == typeof(float))
+                        GL.Uniform1(position, (float)Convert.ChangeType(value, typeof(float)));
+                    else if (_type == typeof(int))
+                        GL.Uniform1(position, (int)Convert.ChangeType(value, typeof(int)));
+                    else if (_type == typeof(Vector2))
+                        GL.Uniform2(position, (Vector2)Convert.ChangeType(value, typeof(Vector2)));
+                    else if (_type == typeof(Vector2i))
+                        GL.Uniform2(position, (Vector2i)Convert.ChangeType(value, typeof(Vector2i)));
+                    else if (_type == typeof(float[]))
+                    {
+                        var f = (float[])Convert.ChangeType(value, typeof(float[]));
+                        GL.Uniform1(position, f.Length, f);
+                    }
+                    else if (_type == typeof(uint))
+                    {
+                        GL.ActiveTexture(TextureUnit.Texture0);
+                        GL.BindTexture(TextureTarget.Texture2D, (uint)Convert.ChangeType(value, typeof(uint)));
+                        GL.Uniform1(position, 0);
+                    }
+                    else
+                        Log.Warn(_tag, "Could not apply uniform " + Name + " of type " + _type.Name);
+                }
+            }
+        }
+
+        internal class ShaderProgram
         {
             public int Id;
             public Dictionary<string, int> UniformLocations = new Dictionary<string, int>();
@@ -49,23 +101,25 @@ namespace AudioReader
 
             public void Use() => GL.UseProgram(Id);
 
-            public void CacheUniformLocations(params string[] labels)
+            public void CacheUniformLocations(IEnumerable<string> labels)
             {
-                Log.Verbose("GLSL Renderer", "Caching uniforms for program " + Id + ".");
+                Log.Verbose(_tag, "Caching uniforms for program " + Id + ".");
                 foreach (var label in labels)
                 {
                     UniformLocations[label] = GL.GetUniformLocation(Id, label);
-                    Log.Verbose("GLSL Renderer", "Cached uniform " + label + " with value " + UniformLocations[label] + ".");
+                    Log.Verbose(_tag, "Cached uniform " + label + " with value " + UniformLocations[label] + ".");
                 }
             }
 
+            public void CacheUniformLocations(params string[] labels) => CacheUniformLocations((IEnumerable<string>)labels);
+
             public void CacheAttributeLocations(params string[] labels)
             {
-                Log.Verbose("GLSL Renderer", "Caching attributes for program " + Id + ".");
+                Log.Verbose(_tag, "Caching attributes for program " + Id + ".");
                 foreach (var label in labels)
                 {
                     AttributeLocations[label] = GL.GetAttribLocation(Id, label);
-                    Log.Verbose("GLSL Renderer", "Cached attribute " + label + " with value " + AttributeLocations[label] + ".");
+                    Log.Verbose(_tag, "Cached attribute " + label + " with value " + AttributeLocations[label] + ".");
                 }
             }
 
@@ -74,155 +128,194 @@ namespace AudioReader
             public bool TryGetAttribute(string label, out int location) => AttributeLocations.TryGetValue(label, out location);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
-        public class OutputTexture
+        private class Pipeline
         {
-            private static ShaderProgram _program;
+            private List<OutputTexture> Textures;
+
             private GlslRenderer _parent;
-            private Vec2<int> _resolution;
-            private Vec2<float> _originOffset;
-            private Vec2<float> _originSize;
-            private bool _useNearest;
-            private uint _framebuffer;
-            public int _texture;
-            private byte[] _data;
-            public bool Ready { get; private set; } = false;
+            private ShaderProgram[] _shaders;
+            private List<TextureSet> _textureSets;
 
-
-            public OutputTexture(GlslRenderer parent, int resolutionX, int resolutionY, float originOffsetX = 0, float originOffsetY = 0, float originSizeX = 1, float originSizeY = 1, bool useNearest = true)
+            public Pipeline(GlslRenderer renderer, string fsPath)
             {
-                _parent = parent;
-                _resolution = new Vec2<int>(resolutionX, resolutionY);
-                _originOffset = new Vec2<float>(originOffsetX, originOffsetY);
-                _originSize = new Vec2<float>(originSizeX, originSizeY);
-                _useNearest = useNearest;
-                _parent._setupOutput += _setup;
+                _parent = renderer;
+                _setupShaders(new string[] { fsPath });
+                _setupTextures();
             }
 
-            ~OutputTexture()
+            private void _setupShaders(string[] fsPaths)
             {
-                _parent._renderOutput -= _render;
-                _parent._leftoverIds.Enqueue(new Tuple<uint, int>(_framebuffer, _texture));
-            }
-
-            private void _setup(object sender, EventArgs e)
-            {
-                _parent._setupOutput -= _setup;
-                if (_program == null)
-                    _setupProgram();
-                _setupFramebuffer();
-                _data = new byte[3 * _resolution.X * _resolution.Y];
-                _parent._renderOutput += _render;
-                Ready = true;
-            }
-
-            private void _setupProgram()
-            {
-                _program = new ShaderProgram
+                _shaders = new ShaderProgram[fsPaths.Length];
+                for (var i = 0; i < fsPaths.Length; i++)
                 {
-                    Id = _parent._createProgram("Shader/GlslSandboxFramework/CopyPositionAttribute.vert", "Shader/GlslSandboxFramework/Resample.frag")
-                };
-                _program.Use();
-                _program.CacheUniformLocations("originOffset", "originSize", "texture");
-                _program.CacheAttributeLocations("position");
+                    _shaders[i] = new ShaderProgram
+                    {
+                        Id = _parent._createProgram("Shader/GlslSandboxFramework/CopyPositionAttribute.vert", fsPaths[i])
+                    };
+                    _shaders[i].Use();
+                    _shaders[i].CacheUniformLocations(_parent._uniforms.Select((uniform) => uniform.Name));
+                    _shaders[i].CacheAttributeLocations("position");
 
-                GL.BindVertexArray(_parent._triangleArray);
-                GL.BindBuffer(BufferTarget.ArrayBuffer, _parent._triangleBuffer);
-                GL.EnableClientState(ArrayCap.VertexArray);
-                if (!_program.TryGetAttribute("position", out var position))
-                    Log.Error("GLSL Renderer", "Vertex shader of resample program doesn't use position attribute.");
-                GL.VertexAttribPointer(position, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-                GL.EnableVertexAttribArray(position);
-                GL.DisableClientState(ArrayCap.VertexArray);
-                GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+                    GL.BindVertexArray(_parent._triangleArray);
+                    GL.BindBuffer(BufferTarget.ArrayBuffer, _parent._triangleBuffer);
+                    GL.EnableClientState(ArrayCap.VertexArray);
+                    if (!_shaders[i].TryGetAttribute("position", out var position))
+                        Log.Error(_tag, "Vertex shader of shader program doesn't use position attribute.");
+                    GL.VertexAttribPointer(position, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+                    GL.EnableVertexAttribArray(position);
+                    GL.DisableClientState(ArrayCap.VertexArray);
+                    GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+                }
             }
 
-            private void _setupFramebuffer()
+            private void _setupTextures()
             {
-                Log.Debug("OutputTexture", "Setting up framebuffer...");
-                GL.GenFramebuffers(1, out _framebuffer);
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, _framebuffer);
-                GL.GenTextures(1, out _texture);
-                GL.BindTexture(TextureTarget.Texture2D, _texture);
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, _resolution.X, _resolution.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
-                GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, _texture, 0);
-                GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
-                if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
+                _textureSets = new List<TextureSet>();
+                Textures = new List<OutputTexture>();
+                AddTextureSet(_parent._textureResolution, _parent._textureResolution);
+            }
+
+            public OutputTexture AddTextureSet(int resolutionX, int resolutionY, double offsetX = 0, double offsetY = 0, double sizeX = 1, double sizeY = 1)
+            {
+                _textureSets.Add(new TextureSet(resolutionX, resolutionY, _shaders.Length, offsetX, offsetY, sizeX, sizeY));
+                _parent._setupTextureSets += _textureSets.Last().Setup;
+                if (_textureSets.Count > 1)
                 {
-                    Log.Error("OutputTexture", "Could not setup framebuffer: " + GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer));
-                    return;
+                    Textures.Add(new OutputTexture() { Ready = false, Data = new byte[resolutionX * resolutionY * 3] });
+                    return Textures.Last();
+                }
+                return null;
+            }
+
+            public void Render()
+            {
+                for (var shaderIndex = 0; shaderIndex < _shaders.Length; shaderIndex++)
+                {
+                    var shader = _shaders[shaderIndex];
+                    shader.Use();
+                    foreach (var uniform in _parent._uniforms)
+                        uniform.Apply(shader);
+                    for (var textureIndex = 0; textureIndex < _textureSets.Count; textureIndex++)
+                    {
+                        var textureSet = _textureSets[textureIndex];
+                        textureSet.ResolutionUniform.Apply(shader);
+
+                        GL.BindFramebuffer(FramebufferTarget.Framebuffer, textureSet.Buffers[shaderIndex]);
+                        GL.Viewport(0, 0, textureSet.Resolution.X, textureSet.Resolution.Y);
+                        GL.Clear(ClearBufferMask.ColorBufferBit);
+
+                        GL.BindVertexArray(_parent._triangleArray);
+                        GL.DrawArrays(PrimitiveType.Quads, 0, 4);
+
+                        if (shaderIndex == _shaders.Length - 1 && textureIndex > 0)
+                        {
+                            Textures[textureIndex - 1].Data = textureSet.GetOutputBytes();
+                            Textures[textureIndex - 1].Ready = true;
+                        }
+                    }
+                }
+            }
+
+            public uint GetDisplayTexture() => _textureSets[0].Textures.Last();
+        }
+
+        private class TextureSet
+        {
+            public Vector2i Resolution { get; private set; }
+            public int[] Buffers { get; private set; }
+            public uint[] Textures { get; private set; }
+            public Uniform ResolutionUniform;
+            private Vector2 _offset;
+            private Vector2 _size;
+            public bool SetUp { get; private set; } = false;
+
+            public TextureSet(int resolutionX, int resolutionY, int number, double offsetX, double offsetY, double sizeX, double sizeY)
+            {
+                Log.Debug(_tag, "Adding TextureSet with resolution " + resolutionX + "x" + resolutionY + ".");
+                Resolution = new Vector2i(resolutionX, resolutionY);
+                ResolutionUniform = new Uniform("resolution", typeof(Vector2i), () => Resolution);
+                _offset = new Vector2((float)offsetX, (float)offsetY);
+                _size = new Vector2((float)sizeX, (float)sizeY);
+                Buffers = new int[number];
+                Textures = new uint[number];
+            }
+
+            public void Setup(object sender, EventArgs e)
+            {
+                Log.Debug(_tag, "Setting up TextureSet with resolution " + Resolution.X + "x" + Resolution.Y + ".");
+                ((GlslRenderer)sender)._setupTextureSets -= Setup;
+
+                GL.GenFramebuffers(Buffers.Length, Buffers);
+                GL.GenTextures(Textures.Length, Textures);
+
+                foreach (var index in Enumerable.Range(0, Buffers.Length))
+                {
+                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, Buffers[index]);
+                    GL.BindTexture(TextureTarget.Texture2D, Textures[index]);
+                    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, Resolution.X, Resolution.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
+                    GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, Textures[index], 0);
+                    GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
+                    if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
+                    {
+                        Log.Error("OutputTexture", "Could not setup framebuffer: " + GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer));
+                        return;
+                    }
                 }
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-                Log.Debug("OutputTexture", "Framebuffer setup complete.");
             }
 
-            private void _render(object sender, EventArgs e)
+            ~TextureSet()
             {
-                GL.ClearColor(Color4.Blue);
-                _program.Use();
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, _framebuffer);
-                GL.Viewport(0, 0, _resolution.X, _resolution.Y);
-                GL.Clear(ClearBufferMask.ColorBufferBit);
+                GL.DeleteTextures(Buffers.Length, Buffers);
+                GL.DeleteFramebuffers(Textures.Length, Textures);
+            }
 
-                if (_program.TryGetUniform("originOffset", out var originOffset))
-                    GL.Uniform2(originOffset, _originOffset.X, _originOffset.Y);
-                if (_program.TryGetUniform("originSize", out var originSize))
-                    GL.Uniform2(originSize, _originSize.X, _originSize.Y);
-
-                GL.Enable(EnableCap.Texture2D);
-                GL.ActiveTexture(TextureUnit.Texture0);
-                GL.BindTexture(TextureTarget.Texture2D, _parent._texture);
-
-                #pragma warning disable IDE0007 // use implicit type - using var here results in ambiguity between function overloads
-                GL.GetTexParameter(TextureTarget.ProxyTexture2D, GetTextureParameter.TextureMinFilter, out int previousMin);
-                GL.GetTexParameter(TextureTarget.ProxyTexture2D, GetTextureParameter.TextureMagFilter, out int previousMag);
-                #pragma warning restore IDE0007 // use implicit type
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)(_useNearest ? TextureMinFilter.Nearest : TextureMinFilter.Linear));
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)(_useNearest ? TextureMagFilter.Nearest : TextureMagFilter.Linear));
-                if (_program.TryGetUniform("texture", out var texture))
-                    GL.Uniform1(texture, 0);
-
-                GL.BindVertexArray(_parent._triangleArray);
-                GL.DrawArrays(PrimitiveType.Quads, 0, 4);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, previousMin);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, previousMag);
-
+            public byte[] GetOutputBytes()
+            {
+                var data = new byte[Resolution.X * Resolution.Y * 3];
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-                GL.BindTexture(TextureTarget.Texture2D, _texture);
-                GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgb, PixelType.UnsignedByte, _data);
-            }
-
-            public byte[] GetImage()
-            {
-                if (!Ready)
-                    return new byte[0];
-                var image = new byte[_data.Length];
-                _data.CopyTo(image, 0);
-                return image;
+                GL.BindTexture(TextureTarget.Texture2D, Textures.Last());
+                GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgb, PixelType.UnsignedByte, data);
+                return data;
             }
         }
 
         #endregion HelperClasses
 
+        #region Static
+
+        public static GlslRenderer Instance;
+        private static Thread _renderThread;
+        private static string _tag = "GLSL Renderer";
+
+        public static void Enable(float[] reducedData)
+        {
+            _renderThread = new Thread(_threadFunction);
+            _renderThread.Start(reducedData);
+        }
+
+        private static void _threadFunction(object reducedData)
+        {
+            Instance = new GlslRenderer((float[])reducedData);
+            Instance.Run(60, Config.GetDefault("glsl/framerate", 60));
+        }
+
+        #endregion Static
+
         #region Member
 
-        private event RenderOutputHandler _renderOutput;
-        private event SetupOutputHandler _setupOutput;
-        private ConcurrentQueue<Tuple<uint, int>> _leftoverIds = new ConcurrentQueue<Tuple<uint, int>>();
+        private event SetupTextureSetEvent _setupTextureSets;
         private uint _triangleArray;
         private uint _triangleBuffer;
-        private uint _framebuffer;
-        private uint _texture;
-        private ShaderProgram _textureProgram = new ShaderProgram();
         private ShaderProgram _screenProgram = new ShaderProgram();
         private DateTime _startTime = DateTime.Now;
         private double _time;
-        private Vec2<int> _mouse = new Vec2<int>(0, 0);
-        private Vec2<int> _resolution = new Vec2<int>(0, 0);
+        private Vector2i _mouse = new Vector2i(0, 0);
+        private Vector2i _resolution = new Vector2i(0, 0);
         private int _textureResolution;
         private float[] _audioData;
         private DateTime _lastBeat = DateTime.Now;
@@ -234,6 +327,8 @@ namespace AudioReader
         private byte[] _albumArtArray;
         private bool _albumArtUpdated;
         private uint _albumArt;
+        private List<Uniform> _uniforms;
+        private Pipeline _pipeline;
 
         #endregion Member
 
@@ -286,13 +381,26 @@ namespace AudioReader
             base.OnLoad(e);
             GL.ClearColor(Color4.Black);
 
-            Log.Info("GLSL Renderer", "Setting up renderer...");
+            Log.Info(_tag, "Setting up renderer...");
 
             _resizeWindow();
             _compileShaders("Shader/GlslSandbox/" + Config.GetDefault("glsl/shader", "Spectrum.frag"));
             _setupVBO();
-            _setupFramebuffer();
-            Log.Info("GLSL Renderer", "Renderer setup complete.");
+            _uniforms = new List<Uniform>()
+            {
+                new Uniform("time", typeof(float), () => _time),
+                new Uniform("mouse", typeof(Vector2), () => new Vector2((float)_mouse.X / _resolution.X, (float)_mouse.Y / _resolution.Y)),
+                new Uniform("audioData", typeof(float[]), () => _audioData),
+                new Uniform("lastBeat", typeof(float), () => _timeSinceLastBeat),
+                new Uniform("lastMouse", typeof(float), () => _timeSinceLastMouse),
+                new Uniform("trackProgress", typeof(float), () => _trackProgress),
+                new Uniform("isPlaying", typeof(int), () => _isPlaying ? 1 : 0),
+                new Uniform("albumArt", typeof(uint), () => _albumArt)
+            };
+            _pipeline = new Pipeline(this, "Shader/GlslSandbox/" + Config.GetDefault("glsl/shader", "Spectrum.frag"));
+
+            Log.Info(_tag, "Renderer setup complete.");
+            Program.RendererSetUp.Set();
         }
 
         protected override void OnResize(EventArgs e)
@@ -307,71 +415,39 @@ namespace AudioReader
             _render();
         }
 
+        public OutputTexture RequestByteArray(int resolutionX, int resolutionY, double offsetX = 0, double offsetY = 0, double sizeX = 1, double sizeY = 1) => _pipeline.AddTextureSet(resolutionX, resolutionY, offsetX, offsetY, sizeX, sizeY);
+
         #endregion Main
 
         #region Helper
 
         private void _resizeWindow()
         {
-            _resolution = new Vec2<int>(ClientRectangle.Width, ClientRectangle.Height);
-            Log.Debug("GLSL Renderer", "Resized window.");
+            _resolution = new Vector2i(ClientRectangle.Width, ClientRectangle.Height);
+            Log.Debug(_tag, "Resized window.");
         }
 
         private void _setupVBO()
         {
-            Log.Debug("GLSL Renderer", "Setting up VBO...");
+            Log.Debug(_tag, "Setting up VBO...");
             GL.GenVertexArrays(1, out _triangleArray);
             GL.BindVertexArray(_triangleArray);
             GL.GenBuffers(1, out _triangleBuffer);
             GL.BindBuffer(BufferTarget.ArrayBuffer, _triangleBuffer);
             GL.EnableClientState(ArrayCap.VertexArray);
             GL.BufferData(BufferTarget.ArrayBuffer, 4 * 3 * sizeof(float), new float[] { -1f, -1f, 0f, 1f, -1f, 0f, 1f, 1f, 0f, -1f, 1f, 0f }, BufferUsageHint.StaticDraw);
-            if (!_textureProgram.TryGetAttribute("position", out var texPosition))
-                Log.Error("GLSL Renderer", "Vertex shader of texture program doesn't use position attribute.");
-            GL.VertexAttribPointer(texPosition, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(texPosition);
             if (!_screenProgram.TryGetAttribute("position", out var scrPosition))
-                Log.Error("GLSL Renderer", "Vertex shader of screen program doesn't use position attribute.");
+                Log.Error(_tag, "Vertex shader of screen program doesn't use position attribute.");
             GL.VertexAttribPointer(scrPosition, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
             GL.EnableVertexAttribArray(scrPosition);
             GL.DisableClientState(ArrayCap.VertexArray);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-            Log.Debug("GLSL Renderer", "VBO setup complete.");
-        }
-
-        private void _setupFramebuffer()
-        {
-            Log.Debug("GLSL Renderer", "Setting up framebuffer...");
-            GL.GenFramebuffers(1, out _framebuffer);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _framebuffer);
-            GL.GenTextures(1, out _texture);
-            GL.BindTexture(TextureTarget.Texture2D, _texture);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, _textureResolution, _textureResolution, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
-            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, _texture, 0);
-            GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
-            if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
-            {
-                Log.Error("GLSL Renderer", "Could not setup framebuffer: " + GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer));
-                return;
-            }
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-            Log.Debug("GLSL Renderer", "Framebuffer setup complete.");
+            Log.Debug(_tag, "VBO setup complete.");
         }
 
         private void _compileShaders(string fsPath)
         {
-            Log.Debug("GLSL Renderer", "Setting up shader programs...");
-
-            if (_textureProgram.Id > 0)
-                _textureProgram.Reset();
-            _textureProgram.Id = _createProgram("Shader/GlslSandboxFramework/CopyPositionAttribute.vert", fsPath);
-            _textureProgram.Use();
-            _textureProgram.CacheUniformLocations("time", "mouse", "resolution", "audioData", "lastBeat", "lastMouse", "trackProgress", "isPlaying", "albumArt");
-            _textureProgram.CacheAttributeLocations("position");
+            Log.Debug(_tag, "Setting up shader programs...");
 
             if (_screenProgram.Id > 0)
                 _screenProgram.Reset();
@@ -380,7 +456,7 @@ namespace AudioReader
             _screenProgram.CacheUniformLocations("texture");
             _screenProgram.CacheAttributeLocations("position");
 
-            Log.Debug("GLSL Renderer", "Shader setup done.");
+            Log.Debug(_tag, "Shader setup done.");
         }
 
         private int _createProgram(string vsPath, string fsPath)
@@ -448,47 +524,11 @@ namespace AudioReader
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, 640, 640, 0, PixelFormat.Rgb, PixelType.UnsignedByte, _albumArtArray);
             }
 
-
             // set up or clean up output textures
-            _setupOutput?.Invoke(this, EventArgs.Empty);
-            if (_leftoverIds.TryDequeue(out var leftoverIds))
-            {
-                GL.DeleteFramebuffer(leftoverIds.Item1);
-                GL.DeleteTexture(leftoverIds.Item2);
-            }
-
-            // draw to texture
-            _textureProgram.Use();
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _framebuffer);
-            GL.Viewport(0, 0, _textureResolution, _textureResolution);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-
-            if (_textureProgram.TryGetUniform("time", out var texTime))
-                GL.Uniform1(texTime, (float)_time);
-            if (_textureProgram.TryGetUniform("mouse", out var texMouse))
-                GL.Uniform2(texMouse, (float)_mouse.X / _resolution.X, (float)_mouse.Y / _resolution.Y);
-            if (_textureProgram.TryGetUniform("resolution", out var texResolution))
-                GL.Uniform2(texResolution, (float)_textureResolution, _textureResolution);
-            if (_textureProgram.TryGetUniform("audioData", out var texAudioData))
-                GL.Uniform1(texAudioData, _audioData.Length, _audioData);
-            if (_textureProgram.TryGetUniform("lastBeat", out var texBeat))
-                GL.Uniform1(texBeat, _timeSinceLastBeat);
-            if (_textureProgram.TryGetUniform("lastMouse", out var texLMouse))
-                GL.Uniform1(texLMouse, _timeSinceLastMouse);
-            if (_textureProgram.TryGetUniform("trackProgress", out var texProgress))
-                GL.Uniform1(texProgress, _trackProgress);
-            if (_textureProgram.TryGetUniform("isPlaying", out var texPlaying))
-                GL.Uniform1(texPlaying, _isPlaying ? 1 : 0);
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, _albumArt);
-            if (_textureProgram.TryGetUniform("albumArt", out var texArt))
-                GL.Uniform1(texArt, 0);
-
-            GL.BindVertexArray(_triangleArray);
-            GL.DrawArrays(PrimitiveType.Quads, 0, 4);
+            _setupTextureSets?.Invoke(this, EventArgs.Empty);
 
             // draw to output textures
-            _renderOutput?.Invoke(this, EventArgs.Empty);
+            _pipeline.Render();
 
             // draw to screen
             _screenProgram.Use();
@@ -497,7 +537,7 @@ namespace AudioReader
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, _texture);
+            GL.BindTexture(TextureTarget.Texture2D, _pipeline.GetDisplayTexture());
             if (_screenProgram.TryGetUniform("texture", out var scrTexture))
                 GL.Uniform1(scrTexture, 0);
 
