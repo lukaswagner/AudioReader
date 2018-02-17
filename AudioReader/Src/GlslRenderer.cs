@@ -8,9 +8,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace AudioReader
 {
+    internal class OutputTexture
+    {
+        public bool Ready;
+        public byte[] Data;
+    }
+
     internal class GlslRenderer : GameWindow
     {
         #region HelperClasses
@@ -69,12 +76,12 @@ namespace AudioReader
                         GL.Uniform1(position, 0);
                     }
                     else
-                        Log.Warn("GLSL Renderer", "Could not apply uniform " + Name + " of type " + _type.Name);
+                        Log.Warn(_tag, "Could not apply uniform " + Name + " of type " + _type.Name);
                 }
             }
         }
 
-        private class ShaderProgram
+        internal class ShaderProgram
         {
             public int Id;
             public Dictionary<string, int> UniformLocations = new Dictionary<string, int>();
@@ -96,11 +103,11 @@ namespace AudioReader
 
             public void CacheUniformLocations(IEnumerable<string> labels)
             {
-                Log.Verbose("GLSL Renderer", "Caching uniforms for program " + Id + ".");
+                Log.Verbose(_tag, "Caching uniforms for program " + Id + ".");
                 foreach (var label in labels)
                 {
                     UniformLocations[label] = GL.GetUniformLocation(Id, label);
-                    Log.Verbose("GLSL Renderer", "Cached uniform " + label + " with value " + UniformLocations[label] + ".");
+                    Log.Verbose(_tag, "Cached uniform " + label + " with value " + UniformLocations[label] + ".");
                 }
             }
 
@@ -108,11 +115,11 @@ namespace AudioReader
 
             public void CacheAttributeLocations(params string[] labels)
             {
-                Log.Verbose("GLSL Renderer", "Caching attributes for program " + Id + ".");
+                Log.Verbose(_tag, "Caching attributes for program " + Id + ".");
                 foreach (var label in labels)
                 {
                     AttributeLocations[label] = GL.GetAttribLocation(Id, label);
-                    Log.Verbose("GLSL Renderer", "Cached attribute " + label + " with value " + AttributeLocations[label] + ".");
+                    Log.Verbose(_tag, "Cached attribute " + label + " with value " + AttributeLocations[label] + ".");
                 }
             }
 
@@ -123,12 +130,6 @@ namespace AudioReader
 
         private class Pipeline
         {
-            private class OutputTexture
-            {
-                public bool Ready;
-                public byte[] Data;
-            }
-
             private List<OutputTexture> Textures;
 
             private GlslRenderer _parent;
@@ -145,7 +146,7 @@ namespace AudioReader
             private void _setupShaders(string[] fsPaths)
             {
                 _shaders = new ShaderProgram[fsPaths.Length];
-                for(var i = 0; i < fsPaths.Length; i++)
+                for (var i = 0; i < fsPaths.Length; i++)
                 {
                     _shaders[i] = new ShaderProgram
                     {
@@ -159,7 +160,7 @@ namespace AudioReader
                     GL.BindBuffer(BufferTarget.ArrayBuffer, _parent._triangleBuffer);
                     GL.EnableClientState(ArrayCap.VertexArray);
                     if (!_shaders[i].TryGetAttribute("position", out var position))
-                        Log.Error("GLSL Renderer", "Vertex shader of shader program doesn't use position attribute.");
+                        Log.Error(_tag, "Vertex shader of shader program doesn't use position attribute.");
                     GL.VertexAttribPointer(position, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
                     GL.EnableVertexAttribArray(position);
                     GL.DisableClientState(ArrayCap.VertexArray);
@@ -174,15 +175,16 @@ namespace AudioReader
                 AddTextureSet(_parent._textureResolution, _parent._textureResolution);
             }
 
-            public int AddTextureSet(int resolutionX, int resolutionY, double offsetX = 0, double offsetY = 0, double sizeX = 1, double sizeY = 1)
+            public OutputTexture AddTextureSet(int resolutionX, int resolutionY, double offsetX = 0, double offsetY = 0, double sizeX = 1, double sizeY = 1)
             {
                 _textureSets.Add(new TextureSet(resolutionX, resolutionY, _shaders.Length, offsetX, offsetY, sizeX, sizeY));
                 _parent._setupTextureSets += _textureSets.Last().Setup;
-                if(_textureSets.Count > 0)
+                if (_textureSets.Count > 1)
                 {
                     Textures.Add(new OutputTexture() { Ready = false, Data = new byte[resolutionX * resolutionY * 3] });
+                    return Textures.Last();
                 }
-                return _textureSets.Count - 1;
+                return null;
             }
 
             public void Render()
@@ -205,7 +207,7 @@ namespace AudioReader
                         GL.BindVertexArray(_parent._triangleArray);
                         GL.DrawArrays(PrimitiveType.Quads, 0, 4);
 
-                        if(shaderIndex == _shaders.Length - 1 && textureIndex > 0)
+                        if (shaderIndex == _shaders.Length - 1 && textureIndex > 0)
                         {
                             Textures[textureIndex - 1].Data = textureSet.GetOutputBytes();
                             Textures[textureIndex - 1].Ready = true;
@@ -229,7 +231,7 @@ namespace AudioReader
 
             public TextureSet(int resolutionX, int resolutionY, int number, double offsetX, double offsetY, double sizeX, double sizeY)
             {
-                Log.Debug("GLSL Renderer", "Adding TextureSet with resolution " + resolutionX + "x" + resolutionY + ".");
+                Log.Debug(_tag, "Adding TextureSet with resolution " + resolutionX + "x" + resolutionY + ".");
                 Resolution = new Vector2i(resolutionX, resolutionY);
                 ResolutionUniform = new Uniform("resolution", typeof(Vector2i), () => Resolution);
                 _offset = new Vector2((float)offsetX, (float)offsetY);
@@ -240,13 +242,13 @@ namespace AudioReader
 
             public void Setup(object sender, EventArgs e)
             {
-                Log.Debug("GLSL Renderer", "Setting up TextureSet with resolution " + Resolution.X + "x" + Resolution.Y + ".");
+                Log.Debug(_tag, "Setting up TextureSet with resolution " + Resolution.X + "x" + Resolution.Y + ".");
                 ((GlslRenderer)sender)._setupTextureSets -= Setup;
 
                 GL.GenFramebuffers(Buffers.Length, Buffers);
                 GL.GenTextures(Textures.Length, Textures);
 
-                foreach(var index in Enumerable.Range(0, Buffers.Length))
+                foreach (var index in Enumerable.Range(0, Buffers.Length))
                 {
                     GL.BindFramebuffer(FramebufferTarget.Framebuffer, Buffers[index]);
                     GL.BindTexture(TextureTarget.Texture2D, Textures[index]);
@@ -284,8 +286,28 @@ namespace AudioReader
 
         #endregion HelperClasses
 
+        #region Static
+
+        public static GlslRenderer Instance;
+        private static Thread _renderThread;
+        private static string _tag = "GLSL Renderer";
+
+        public static void Enable(float[] reducedData)
+        {
+            _renderThread = new Thread(_threadFunction);
+            _renderThread.Start(reducedData);
+        }
+
+        private static void _threadFunction(object reducedData)
+        {
+            Instance = new GlslRenderer((float[])reducedData);
+            Instance.Run(60, Config.GetDefault("glsl/framerate", 60));
+        }
+
+        #endregion Static
+
         #region Member
-        
+
         private event SetupTextureSetEvent _setupTextureSets;
         private uint _triangleArray;
         private uint _triangleBuffer;
@@ -359,7 +381,7 @@ namespace AudioReader
             base.OnLoad(e);
             GL.ClearColor(Color4.Black);
 
-            Log.Info("GLSL Renderer", "Setting up renderer...");
+            Log.Info(_tag, "Setting up renderer...");
 
             _resizeWindow();
             _compileShaders("Shader/GlslSandbox/" + Config.GetDefault("glsl/shader", "Spectrum.frag"));
@@ -377,7 +399,8 @@ namespace AudioReader
             };
             _pipeline = new Pipeline(this, "Shader/GlslSandbox/" + Config.GetDefault("glsl/shader", "Spectrum.frag"));
 
-            Log.Info("GLSL Renderer", "Renderer setup complete.");
+            Log.Info(_tag, "Renderer setup complete.");
+            Program.RendererSetUp.Set();
         }
 
         protected override void OnResize(EventArgs e)
@@ -392,6 +415,8 @@ namespace AudioReader
             _render();
         }
 
+        public OutputTexture RequestByteArray(int resolutionX, int resolutionY, double offsetX = 0, double offsetY = 0, double sizeX = 1, double sizeY = 1) => _pipeline.AddTextureSet(resolutionX, resolutionY, offsetX, offsetY, sizeX, sizeY);
+
         #endregion Main
 
         #region Helper
@@ -399,12 +424,12 @@ namespace AudioReader
         private void _resizeWindow()
         {
             _resolution = new Vector2i(ClientRectangle.Width, ClientRectangle.Height);
-            Log.Debug("GLSL Renderer", "Resized window.");
+            Log.Debug(_tag, "Resized window.");
         }
 
         private void _setupVBO()
         {
-            Log.Debug("GLSL Renderer", "Setting up VBO...");
+            Log.Debug(_tag, "Setting up VBO...");
             GL.GenVertexArrays(1, out _triangleArray);
             GL.BindVertexArray(_triangleArray);
             GL.GenBuffers(1, out _triangleBuffer);
@@ -412,17 +437,17 @@ namespace AudioReader
             GL.EnableClientState(ArrayCap.VertexArray);
             GL.BufferData(BufferTarget.ArrayBuffer, 4 * 3 * sizeof(float), new float[] { -1f, -1f, 0f, 1f, -1f, 0f, 1f, 1f, 0f, -1f, 1f, 0f }, BufferUsageHint.StaticDraw);
             if (!_screenProgram.TryGetAttribute("position", out var scrPosition))
-                Log.Error("GLSL Renderer", "Vertex shader of screen program doesn't use position attribute.");
+                Log.Error(_tag, "Vertex shader of screen program doesn't use position attribute.");
             GL.VertexAttribPointer(scrPosition, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
             GL.EnableVertexAttribArray(scrPosition);
             GL.DisableClientState(ArrayCap.VertexArray);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-            Log.Debug("GLSL Renderer", "VBO setup complete.");
+            Log.Debug(_tag, "VBO setup complete.");
         }
 
         private void _compileShaders(string fsPath)
         {
-            Log.Debug("GLSL Renderer", "Setting up shader programs...");
+            Log.Debug(_tag, "Setting up shader programs...");
 
             if (_screenProgram.Id > 0)
                 _screenProgram.Reset();
@@ -431,7 +456,7 @@ namespace AudioReader
             _screenProgram.CacheUniformLocations("texture");
             _screenProgram.CacheAttributeLocations("position");
 
-            Log.Debug("GLSL Renderer", "Shader setup done.");
+            Log.Debug(_tag, "Shader setup done.");
         }
 
         private int _createProgram(string vsPath, string fsPath)
