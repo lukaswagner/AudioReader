@@ -18,9 +18,8 @@ namespace AudioReader
         private const uint SENDER_LENGTH = LED_COUNT * 3; // number of bytes to send
 
         private static ArtNetSocket s_artnet = new ArtNetSocket();
-        private static IPEndPoint endPoint;
 
-        private static ArtNetDevice[] devices = new ArtNetDevice[0];
+        private static List<ArtNetDevice> devices = new List<ArtNetDevice>();
 
         private static DateTime _lastTime = DateTime.Now;
         private static Thread _artNetOutputLoopThread = new Thread(_artNetOutputLoop);
@@ -43,8 +42,8 @@ namespace AudioReader
             while(Config.NodeExists("artnet/devices/device[" + i + "]"))
             {
                 Config.Get<string>("artnet/devices/device[" + i + "]/ip", out var ip);
-                Config.Get<uint>(   "artnet/devices/device[" + i + "]/width_px", out var width_px);
-                Config.Get<uint>(   "artnet/devices/device[" + i + "]/height_px", out var height_px);
+                Config.Get<uint>(  "artnet/devices/device[" + i + "]/width_px", out var width_px);
+                Config.Get<uint>(  "artnet/devices/device[" + i + "]/height_px", out var height_px);
                 Config.Get<float>( "artnet/devices/device[" + i + "]/width_m", out var width_m);
                 Config.Get<float>( "artnet/devices/device[" + i + "]/height_m", out var height_m);
                 Config.Get<bool>(  "artnet/devices/device[" + i + "]/patch_mode/snake", out var snake);
@@ -53,6 +52,7 @@ namespace AudioReader
                 Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/start_y", out var start_y);
 
                 var device = new ArtNetDevice(ip, width_px, height_px, width_m, height_m, snake, direction, start_x, start_y);
+                devices.Add(device);
                 i++;
             }
 
@@ -67,17 +67,8 @@ namespace AudioReader
                 if((DateTime.Now - _lastTime).Milliseconds > 16)
                 {
                     _lastTime = DateTime.Now;
-                    //ArtNetDmxPacket toSend = new ArtNetDmxPacket();
-                    //Random rnd = new Random();
-
-                    //toSend.DmxData = new byte[SENDER_LENGTH];
-
-                    //toSend.Universe = (short)1;
-
-                    //for (uint i = 0; i < SENDER_LENGTH; i++) toSend.DmxData[i] = 0;
-                    //toSend.DmxData[(DateTime.Now.Second / 2) * 3] = 255;
-
-                    //s_artnet.SendTo(toSend.ToArray(), endPoint);
+                    foreach (var device in devices)
+                        device.Send(s_artnet);
                 }
             }
         }

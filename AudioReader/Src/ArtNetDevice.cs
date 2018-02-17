@@ -1,3 +1,5 @@
+using ArtNet.Packets;
+using ArtNet.Sockets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,12 +19,9 @@ namespace AudioReader
         private float _width_m = 0.0f;
         private float _height_m = 0.0f;
 
-        /*private bool _snake = false;
-        private bool _vertical = false;
-        private bool _startAtTop = false;
-        private bool _startAtLeft = false;/**/
-
         private uint[] ledIds; //which led is at this pixel
+
+        uint pos = 0; //TODO: remove; just for testing 
 
         public ArtNetDevice(
             string ip,
@@ -90,6 +89,20 @@ namespace AudioReader
                 }
                 //Log.Debug("ledIds", line);
             }
+        }
+
+        public void Send(ArtNetSocket artnet)
+        {
+            ArtNetDmxPacket toSend = new ArtNetDmxPacket();
+            long dataLength = _width_px * _height_px * 3;
+            toSend.DmxData = new byte[dataLength];
+            toSend.Universe = (short)1;
+
+            for (uint i = 0; i < dataLength; i++) toSend.DmxData[i] = 0;
+
+            toSend.DmxData[ledIds[pos++] * 3] = 255;
+            if (pos * 3 >= dataLength) pos = 0;
+            artnet.SendTo(toSend.ToArray(), _endPoint);
         }
 
     }
