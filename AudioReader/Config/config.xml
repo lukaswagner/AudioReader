@@ -24,6 +24,7 @@
     </philips_hue>
     <artnet>
         <enabled>true</enabled>
+        <framerate>30</framerate>
         <devices>
             <device>
                 <ip>192.168.1.100</ip>
@@ -31,6 +32,8 @@
                 <height_px>30</height_px>
                 <width_m>0.5</width_m>
                 <height_m>2.0</height_m>
+                <offest_x_m>0.0</offest_x_m>
+                <offest_y_m>0.0</offest_y_m>
                 <patch_mode>
                     <snake>true</snake>
                     <direction>vertical</direction>
@@ -38,7 +41,7 @@
                     <start_y>bottom</start_y>
                 </patch_mode>
             </device>
-            <device>
+            <!--device>
                 <ip>192.168.1.10</ip>
                 <width_px>5</width_px>
                 <height_px>30</height_px>
@@ -50,20 +53,20 @@
                     <start_x>left</start_x>
                     <start_y>top</start_y>
                 </patch_mode>
-            </device>
+            </device-->
         </devices>
     </artnet>
     <glsl>
         <window_width>800</window_width>
         <window_height>600</window_height>
         <framerate>60</framerate>
-        <shader>SpotifyTest.frag</shader>
+        <shader>gradient.frag</shader>
         <enabled>true</enabled>
-        <resolution>1024</resolution>
+        <resolution>30</resolution>
     </glsl>
     <gloutput>
         <framerate>60</framerate>
         <enabled>false</enabled>
-        <resolution>200</resolution>
+        <resolution>30</resolution>
     </gloutput>
 </config>

@@ -177,6 +177,8 @@ namespace AudioReader
 
             public OutputTexture AddTextureSet(int resolutionX, int resolutionY, double offsetX = 0, double offsetY = 0, double sizeX = 1, double sizeY = 1)
             {
+                Log.Debug(_tag, "resolutionX: " + resolutionX);
+                Log.Debug(_tag, "resolutionY: " + resolutionY);
                 _textureSets.Add(new TextureSet(resolutionX, resolutionY, _shaders.Length, offsetX, offsetY, sizeX, sizeY));
                 _parent._setupTextureSets += _textureSets.Last().Setup;
                 if (_textureSets.Count > 1)

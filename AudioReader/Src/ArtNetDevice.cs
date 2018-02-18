@@ -19,9 +19,11 @@ namespace AudioReader
         private float _width_m = 0.0f;
         private float _height_m = 0.0f;
 
-        private uint[] ledIds; //which led is at this pixel
+        private uint[] _ledIds; //which led is at this pixel
 
-        uint pos = 0; //TODO: remove; just for testing 
+        uint pos = 0; //TODO: remove; just for testing
+
+        private OutputTexture _textureByteArray;
 
         public ArtNetDevice(
             string ip,
@@ -45,10 +47,12 @@ namespace AudioReader
             }
             _endPoint = new IPEndPoint(ipLong, 6454);
 
-            ledIds = new uint[width_px * height_px];
+            _ledIds = new uint[width_px * height_px];
+
+            _textureByteArray = GlslRenderer.Instance.RequestByteArray((int)height_px, (int)width_px);
 
             //Log.Debug("ArtNet", "===============");
-            for(uint y = 0; y < height_px; y++)
+            for (uint y = 0; y < height_px; y++)
             {
                 string line = "";
                 for(uint x = 0; x < width_px; x++)
@@ -84,8 +88,8 @@ namespace AudioReader
                         }
                     }
 
-                    ledIds[pixel_pos] = x_led + y_led * width;
-                    line += ledIds[pixel_pos].ToString("D3") + " ";
+                    _ledIds[pixel_pos] = x_led + y_led * width;
+                    line += _ledIds[pixel_pos].ToString("D3") + " ";
                 }
                 //Log.Debug("ledIds", line);
             }
@@ -93,15 +97,24 @@ namespace AudioReader
 
         public void Send(ArtNetSocket artnet)
         {
+            if (!_textureByteArray.Ready) return;
+
             ArtNetDmxPacket toSend = new ArtNetDmxPacket();
-            long dataLength = _width_px * _height_px * 3;
-            toSend.DmxData = new byte[dataLength];
+            long dataLength = _width_px * _height_px;
+            toSend.DmxData = new byte[dataLength * 3];
             toSend.Universe = (short)1;
 
-            for (uint i = 0; i < dataLength; i++) toSend.DmxData[i] = 0;
+            /*for (uint i = 0; i < dataLength; i++) toSend.DmxData[i] = 0;
+            toSend.DmxData[_ledIds[pos++] * 3] = 255;
+            if (pos * 3 >= dataLength) pos = 0;/**/
 
-            toSend.DmxData[ledIds[pos++] * 3] = 255;
-            if (pos * 3 >= dataLength) pos = 0;
+            for (uint i = 0; i < dataLength; i++)
+            {
+                toSend.DmxData[_ledIds[i] * 3 + 0] = _textureByteArray.Data[i * 3 + 0];
+                toSend.DmxData[_ledIds[i] * 3 + 1] = _textureByteArray.Data[i * 3 + 1];
+                toSend.DmxData[_ledIds[i] * 3 + 2] = _textureByteArray.Data[i * 3 + 2];
+            }
+
             artnet.SendTo(toSend.ToArray(), _endPoint);
         }
 

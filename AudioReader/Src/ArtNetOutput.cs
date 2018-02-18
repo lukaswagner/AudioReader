@@ -25,6 +25,10 @@ namespace AudioReader
         private static Thread _artNetOutputLoopThread = new Thread(_artNetOutputLoop);
         private static bool _run = false;
 
+        private static int _targetFramerate = Config.GetDefault("artnet/framerate", 60);
+        private static double _targetFrametime = 1000d / _targetFramerate;
+        private static DateTime _loopTime = DateTime.Now;
+
         public static void Enable()
         {
             IPAddress[] localIPs = Dns.GetHostAddresses(Dns.GetHostName());
@@ -64,12 +68,12 @@ namespace AudioReader
         {
             while (_run)
             {
-                if((DateTime.Now - _lastTime).Milliseconds > 16)
-                {
-                    _lastTime = DateTime.Now;
-                    foreach (var device in devices)
-                        device.Send(s_artnet);
-                }
+                
+                foreach (var device in devices)
+                    device.Send(s_artnet);/**/
+                var loopTime = (DateTime.Now - _loopTime).TotalMilliseconds;
+                Thread.Sleep(Math.Max((int)(_targetFrametime - loopTime), 0));
+                _loopTime = DateTime.Now;
             }
         }
     }
