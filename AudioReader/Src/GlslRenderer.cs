@@ -167,6 +167,7 @@ namespace AudioReader
                     };
                     _shaders[i].Use();
                     _shaders[i].CacheUniformLocations(_parent._uniforms.Select((uniform) => uniform.Name));
+                    _shaders[i].CacheUniformLocations("resolution");
                     _shaders[i].CacheAttributeLocations("position");
 
                     GL.BindVertexArray(_parent._triangleArray);
