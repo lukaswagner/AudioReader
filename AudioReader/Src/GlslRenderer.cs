@@ -78,6 +78,7 @@ namespace AudioReader
                     else
                         Log.Warn(_tag, "Could not apply uniform " + Name + " of type " + _type.Name);
                 }
+                //else Log.Verbose(_tag, "Could not apply uniform " + Name + " since it is not used in the shader.");
             }
         }
 
@@ -106,7 +107,13 @@ namespace AudioReader
                 Log.Verbose(_tag, "Caching uniforms for program " + Id + ".");
                 foreach (var label in labels)
                 {
-                    UniformLocations[label] = GL.GetUniformLocation(Id, label);
+                    var location = GL.GetUniformLocation(Id, label);
+                    if (location < 0)
+                    {
+                        Log.Verbose(_tag, "Could not find uniform " + label + ".");
+                        continue;
+                    }
+                    UniformLocations[label] = location;
                     Log.Verbose(_tag, "Cached uniform " + label + " with value " + UniformLocations[label] + ".");
                 }
             }
@@ -118,7 +125,13 @@ namespace AudioReader
                 Log.Verbose(_tag, "Caching attributes for program " + Id + ".");
                 foreach (var label in labels)
                 {
-                    AttributeLocations[label] = GL.GetAttribLocation(Id, label);
+                    var location = GL.GetAttribLocation(Id, label);
+                    if(location < 0)
+                    {
+                        Log.Verbose(_tag, "Could not find attribute " + label + ".");
+                        continue;
+                    }
+                    AttributeLocations[label] = location;
                     Log.Verbose(_tag, "Cached attribute " + label + " with value " + AttributeLocations[label] + ".");
                 }
             }
