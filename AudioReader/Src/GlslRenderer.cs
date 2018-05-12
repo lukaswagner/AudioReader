@@ -78,7 +78,6 @@ namespace AudioReader
                     else
                         Log.Warn(_tag, "Could not apply uniform " + Name + " of type " + _type.Name);
                 }
-                //else Log.Verbose(_tag, "Could not apply uniform " + Name + " since it is not used in the shader.");
             }
         }
 
