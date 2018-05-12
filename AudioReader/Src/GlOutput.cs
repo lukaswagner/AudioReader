@@ -20,15 +20,19 @@ namespace AudioReader
             private uint _triangleBuffer;
             private GlslRenderer.ShaderProgram _screenProgram = new GlslRenderer.ShaderProgram();
             private uint _texture;
+            private int _width;
+            private int _height;
 
-            public OutputWindow() : base(
-                _resolution,
-                _resolution,
+            public OutputWindow(int width, int height, int zoom) : base(
+                width * zoom,
+                height * zoom,
                 GraphicsMode.Default,
                 "GL Output Test")
             {
-                _textureByteArray = GlslRenderer.Instance.RequestByteArray(_resolution, _resolution);
-
+                _width = width;
+                _height = height;
+                _textureByteArray = GlslRenderer.Instance.RequestByteArray(_width, _height);
+                
                 GL.GenTextures(1, out _texture);
                 GL.BindTexture(TextureTarget.Texture2D, _texture);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
@@ -57,7 +61,7 @@ namespace AudioReader
                 if (_textureByteArray.Ready)
                 {
                     GL.BindTexture(TextureTarget.Texture2D, _texture);
-                    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, _resolution, _resolution, 0, PixelFormat.Rgb, PixelType.UnsignedByte, _textureByteArray.Data);
+                    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, _width, _height, 0, PixelFormat.Rgb, PixelType.UnsignedByte, _textureByteArray.Data);
                 }
 
                 _screenProgram.Use();
@@ -158,19 +162,21 @@ namespace AudioReader
 
         }
 
-        private static int _resolution;
         private static string _tag = "OpenGL Output";
 
         public static void Enable()
         {
-            _resolution = Config.GetDefault("gloutput/resolution", 100);
-            var thread = new Thread(_beatDetectionLoop);
+            var thread = new Thread(_outputLoop);
             thread.Start();
         }
 
-        private static void _beatDetectionLoop()
+        private static void _outputLoop()
         {
-            var window = new OutputWindow();
+            var width = Config.GetDefault("gloutput/width", 100);
+            var height = Config.GetDefault("gloutput/height", 100);
+            var zoom = Config.GetDefault("gloutput/zoom", 10);
+            
+            var window = new OutputWindow(width, height, zoom);
             window.Run();
         }
     }

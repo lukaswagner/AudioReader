@@ -32,7 +32,9 @@
     </glsl>
     <gloutput>
         <framerate>60</framerate>
-        <enabled>false</enabled>
-        <resolution>200</resolution>
+        <enabled>true</enabled>
+        <width>10</width>
+        <height>10</height>
+        <zoom>20</zoom>
     </gloutput>
 </config>
