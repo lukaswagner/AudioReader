@@ -290,10 +290,10 @@ namespace AudioReader
 
             public byte[] GetOutputBytes()
             {
-                var data = new byte[Resolution.X * Resolution.Y * 3];
+                var data = new byte[Resolution.X * Resolution.Y * 4];
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
                 GL.BindTexture(TextureTarget.Texture2D, Textures.Last());
-                GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgb, PixelType.UnsignedByte, data);
+                GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgba, PixelType.UnsignedByte, data);
                 return data;
             }
         }
@@ -384,6 +384,7 @@ namespace AudioReader
 
             GL.GenTextures(1, out _albumArt);
             GL.BindTexture(TextureTarget.Texture2D, _albumArt);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, 640, 640, 0, PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);

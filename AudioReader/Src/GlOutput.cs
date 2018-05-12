@@ -35,6 +35,7 @@ namespace AudioReader
                 
                 GL.GenTextures(1, out _texture);
                 GL.BindTexture(TextureTarget.Texture2D, _texture);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, _width, _height, 0, PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
@@ -58,11 +59,11 @@ namespace AudioReader
             {
                 base.OnRenderFrame(e);
 
-                if (_textureByteArray.Ready)
-                {
-                    GL.BindTexture(TextureTarget.Texture2D, _texture);
-                    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, _width, _height, 0, PixelFormat.Rgb, PixelType.UnsignedByte, _textureByteArray.Data);
-                }
+                if (!_textureByteArray.Ready)
+                    return;
+
+                GL.BindTexture(TextureTarget.Texture2D, _texture);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, _width, _height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, _textureByteArray.Data);
 
                 _screenProgram.Use();
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
