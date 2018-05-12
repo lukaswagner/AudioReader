@@ -38,7 +38,7 @@
                     <snake>true</snake>
                     <direction>vertical</direction>
                     <start_x>right</start_x>
-                    <start_y>bottom</start_y>
+                    <start_y>top</start_y>
                 </patch_mode>
             </device>
             <!--device>
@@ -67,8 +67,8 @@
     <gloutput>
         <framerate>60</framerate>
         <enabled>true</enabled>
-        <width>10</width>
-        <height>10</height>
+        <width>5</width>
+        <height>30</height>
         <zoom>20</zoom>
     </gloutput>
 </config>

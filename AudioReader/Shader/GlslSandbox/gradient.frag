@@ -20,7 +20,7 @@ void main()
     vec4 art = mix(artGray, artColor, isPlaying);
     vec4 progress = mix(vec4(vec3(0.0), 1.0), vec4(1.0), int(trackProgress > texcoord.x));/**/
 	
-	vec3 c = hsv2rgb(vec3(fract(texcoord.x + time / 5000.0), 1.0, 1.0));/**/
+	vec3 c = hsv2rgb(vec3(fract(texcoord.x * 0.4 + time / 10000.0), 1.0, 1.0));/**/
 	/*vec2 pos = gl_FragCoord.xy;
 	float p = pos.x + pos.y * 5.0;
 	float m = 5.0 * 30.0;/**/

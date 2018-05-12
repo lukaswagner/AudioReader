@@ -11,6 +11,8 @@ namespace AudioReader
 {
     class ArtNetDevice
     {
+        private static string _tag = "ArtNetDevice";
+
         private IPEndPoint _endPoint;
 
         private uint _width_px = 0;
@@ -49,50 +51,11 @@ namespace AudioReader
 
             _ledIds = new uint[width_px * height_px];
 
-            _textureByteArray = GlslRenderer.Instance.RequestByteArray((int)height_px, (int)width_px);
+            _textureByteArray = GlslRenderer.Instance.RequestByteArray((int)width_px, (int)height_px);
 
             //Log.Debug("ArtNet", "===============");
-            for (uint y = 0; y < height_px; y++)
-            {
-                string line = "";
-                for(uint x = 0; x < width_px; x++)
-                {
-                    uint pixel_pos = x + y * width_px;
 
-                    uint x_led = start_x == "left" ? x : width_px - x - 1;
-                    uint y_led = start_y == "bottom" ? y : height_px - y - 1;
-
-                    uint width = width_px;
-                    uint height = height_px;
-
-                    if (direction != "horizontal")
-                    {
-                        uint cache = x_led;
-                        x_led = y_led;
-                        y_led = cache;
-                        width = height_px;
-                        height = width_px;
-                    }
-
-                    if (snake)
-                    {
-                        if(direction == "horizontal")
-                        {
-                            if ((height - y) % 2 == 0)
-                                x_led = width - x_led - 1;
-                        }
-                        else
-                        {
-                            if ((x) % 2 == 1)
-                                x_led = width - x_led - 1;
-                        }
-                    }
-
-                    _ledIds[pixel_pos] = x_led + y_led * width;
-                    line += _ledIds[pixel_pos].ToString("D3") + " ";
-                }
-                //Log.Debug("ledIds", line);
-            }
+            _ledIds = _generateLedIDs(width_px, height_px, start_x == "right", start_y == "bottom", direction == "vertical", snake);
         }
 
         public void Send(ArtNetSocket artnet)
@@ -110,12 +73,68 @@ namespace AudioReader
 
             for (uint i = 0; i < dataLength; i++)
             {
-                toSend.DmxData[_ledIds[i] * 3 + 0] = _textureByteArray.Data[i * 3 + 0];
-                toSend.DmxData[_ledIds[i] * 3 + 1] = _textureByteArray.Data[i * 3 + 1];
-                toSend.DmxData[_ledIds[i] * 3 + 2] = _textureByteArray.Data[i * 3 + 2];
+                toSend.DmxData[_ledIds[i] * 3 + 0] = _textureByteArray.Data[i * 4 + 0];
+                toSend.DmxData[_ledIds[i] * 3 + 1] = _textureByteArray.Data[i * 4 + 1];
+                toSend.DmxData[_ledIds[i] * 3 + 2] = _textureByteArray.Data[i * 4 + 2];
             }
 
             artnet.SendTo(toSend.ToArray(), _endPoint);
+        }
+
+        private static uint[] _generateLedIDs(uint width, uint height, bool startRight, bool startBottom, bool vertical, bool snake)
+        {
+            var ledIds = new uint[width * height];
+
+            if (vertical)
+            {
+                bool mirrored = false;
+                for (var x = 0u; x < width; x++)
+                {
+                    for (var y = 0u; y < height; y++)
+                    {
+                        ledIds[y * width + x] = (mirrored ? height - y -1 : y) + x * height;
+                    }
+                    if(snake)
+                        mirrored = !mirrored;
+                }
+            }
+            else
+            {
+                bool mirrored = false;
+                for (var y = 0u; y < height; y++)
+                {
+                    for (var x = 0u; x < width; x++)
+                    {
+                        ledIds[y * width + x] = (mirrored ? width - x - 1 : x) + y * width;
+                    }
+                    if (snake)
+                        mirrored = !mirrored;
+                }
+            }
+
+            if (startRight)
+            {
+                var temp = new List<uint>();
+                for (var y = 0; y < height; y++)
+                    temp.AddRange(ledIds.Skip(y * (int)width).Take((int)width).Reverse());
+                ledIds = temp.ToArray();
+            }
+
+            if (!startBottom) // OpenGL textures are inverted vertically
+            {
+                uint temp;
+                for (var y = 0; y < height / 2; y++)
+                {
+                    for (var x = 0; x < width; x++)
+                    {
+                        temp = ledIds[y * width + x];
+                        ledIds[y * width + x] = ledIds[(height - y - 1) * width + x];
+                        ledIds[(height - y - 1) * width + x] = temp;
+                    }
+                }
+            }
+
+            return ledIds;
         }
 
     }
