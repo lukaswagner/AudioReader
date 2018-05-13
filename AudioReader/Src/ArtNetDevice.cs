@@ -1,11 +1,8 @@
 using ArtNet.Packets;
 using ArtNet.Sockets;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AudioReader
 {
@@ -23,15 +20,13 @@ namespace AudioReader
 
         private uint[] _ledIds; //which led is at this pixel
 
-        uint pos = 0; //TODO: remove; just for testing
-
         private OutputTexture _textureByteArray;
 
         public ArtNetDevice(
             string ip,
             uint width_px, uint height_px,
             float width_m, float height_m,
-            bool snake, string direction, string start_x, string start_y)
+            bool snake, bool vertical, bool startRight, bool startBottom)
         {
             _width_px = width_px;
             _height_px = height_px;
@@ -49,13 +44,8 @@ namespace AudioReader
             }
             _endPoint = new IPEndPoint(ipLong, 6454);
 
-            _ledIds = new uint[width_px * height_px];
-
             _textureByteArray = GlslRenderer.Instance.RequestByteArray((int)width_px, (int)height_px);
-
-            //Log.Debug("ArtNet", "===============");
-
-            _ledIds = _generateLedIDs(width_px, height_px, start_x == "right", start_y == "bottom", direction == "vertical", snake);
+            _ledIds = _generateLedIDs(width_px, height_px, startRight, startBottom, vertical, snake);
         }
 
         public void Send(ArtNetSocket artnet)
@@ -66,10 +56,6 @@ namespace AudioReader
             long dataLength = _width_px * _height_px;
             toSend.DmxData = new byte[dataLength * 3];
             toSend.Universe = (short)1;
-
-            /*for (uint i = 0; i < dataLength; i++) toSend.DmxData[i] = 0;
-            toSend.DmxData[_ledIds[pos++] * 3] = 255;
-            if (pos * 3 >= dataLength) pos = 0;/**/
 
             for (uint i = 0; i < dataLength; i++)
             {

@@ -42,8 +42,8 @@ namespace AudioReader
             s_artnet.EnableBroadcast = true;
             s_artnet.Open(lanAdress, IPAddress.Parse("255.255.255.0"));
 
-            int i = 1;
-            while(Config.NodeExists("artnet/devices/device[" + i + "]"))
+            int i = 0;
+            while(Config.NodeExists("artnet/devices/device[" + ++i + "]"))
             {
                 Config.Get<string>("artnet/devices/device[" + i + "]/ip", out var ip);
                 Config.Get<uint>(  "artnet/devices/device[" + i + "]/width_px", out var width_px);
@@ -55,9 +55,17 @@ namespace AudioReader
                 Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/start_x", out var start_x);
                 Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/start_y", out var start_y);
 
-                var device = new ArtNetDevice(ip, width_px, height_px, width_m, height_m, snake, direction, start_x, start_y);
-                devices.Add(device);
-                i++;
+                devices.Add(new ArtNetDevice(
+                    ip,
+                    width_px,
+                    height_px,
+                    width_m,
+                    height_m,
+                    snake,
+                    direction == "vertical",
+                    start_x == "right",
+                    start_y == "bottom")
+                );
             }
 
             _run = true;
@@ -70,7 +78,7 @@ namespace AudioReader
             {
                 
                 foreach (var device in devices)
-                    device.Send(s_artnet);/**/
+                    device.Send(s_artnet);
                 var loopTime = (DateTime.Now - _loopTime).TotalMilliseconds;
                 Thread.Sleep(Math.Max((int)(_targetFrametime - loopTime), 0));
                 _loopTime = DateTime.Now;

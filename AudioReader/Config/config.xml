@@ -41,19 +41,6 @@
                     <start_y>top</start_y>
                 </patch_mode>
             </device>
-            <!--device>
-                <ip>192.168.1.10</ip>
-                <width_px>5</width_px>
-                <height_px>30</height_px>
-                <width_m>0.5</width_m>
-                <height_m>2.0</height_m>
-                <patch_mode>
-                    <snake>false</snake>
-                    <direction>horizontal</direction>
-                    <start_x>left</start_x>
-                    <start_y>top</start_y>
-                </patch_mode>
-            </device-->
         </devices>
     </artnet>
     <glsl>
