@@ -106,7 +106,13 @@ namespace AudioReader
                 Log.Verbose(_tag, "Caching uniforms for program " + Id + ".");
                 foreach (var label in labels)
                 {
-                    UniformLocations[label] = GL.GetUniformLocation(Id, label);
+                    var location = GL.GetUniformLocation(Id, label);
+                    if (location < 0)
+                    {
+                        Log.Verbose(_tag, "Could not find uniform " + label + ".");
+                        continue;
+                    }
+                    UniformLocations[label] = location;
                     Log.Verbose(_tag, "Cached uniform " + label + " with value " + UniformLocations[label] + ".");
                 }
             }
@@ -118,7 +124,13 @@ namespace AudioReader
                 Log.Verbose(_tag, "Caching attributes for program " + Id + ".");
                 foreach (var label in labels)
                 {
-                    AttributeLocations[label] = GL.GetAttribLocation(Id, label);
+                    var location = GL.GetAttribLocation(Id, label);
+                    if(location < 0)
+                    {
+                        Log.Verbose(_tag, "Could not find attribute " + label + ".");
+                        continue;
+                    }
+                    AttributeLocations[label] = location;
                     Log.Verbose(_tag, "Cached attribute " + label + " with value " + AttributeLocations[label] + ".");
                 }
             }
@@ -154,6 +166,7 @@ namespace AudioReader
                     };
                     _shaders[i].Use();
                     _shaders[i].CacheUniformLocations(_parent._uniforms.Select((uniform) => uniform.Name));
+                    _shaders[i].CacheUniformLocations("resolution");
                     _shaders[i].CacheAttributeLocations("position");
 
                     GL.BindVertexArray(_parent._triangleArray);
@@ -276,10 +289,10 @@ namespace AudioReader
 
             public byte[] GetOutputBytes()
             {
-                var data = new byte[Resolution.X * Resolution.Y * 3];
+                var data = new byte[Resolution.X * Resolution.Y * 4];
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
                 GL.BindTexture(TextureTarget.Texture2D, Textures.Last());
-                GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgb, PixelType.UnsignedByte, data);
+                GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgba, PixelType.UnsignedByte, data);
                 return data;
             }
         }
@@ -370,6 +383,7 @@ namespace AudioReader
 
             GL.GenTextures(1, out _albumArt);
             GL.BindTexture(TextureTarget.Texture2D, _albumArt);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, 640, 640, 0, PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
