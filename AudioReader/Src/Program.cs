@@ -45,6 +45,7 @@ namespace AudioReader
 
             RendererSetUp.WaitOne();
 
+            _checkEnabled("artnet", "ArtNet output", () => ArtNetOutput.Enable());
             _checkEnabled("gloutput", "OpenGL Output", () => GlOutput.Enable());
 
             Log.Info("Main", "Everything set up.");

@@ -82,8 +82,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Src\ArtNetDevice.cs" />
     <Compile Include="Src\GlOutput.cs" />
     <Compile Include="Src\Spotify.cs" />
+    <Compile Include="Src\ArtNetOutput.cs" />
     <Compile Include="Src\GlslRenderer.cs" />
     <Compile Include="Src\BeatDetection.cs" />
     <Compile Include="Src\HueController.cs" />

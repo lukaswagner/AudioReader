@@ -22,19 +22,40 @@
         <key>BF2f0oKYa4yj0oheEf4KUQuSZTs5ASROmdTOE7nU</key>
         <preserve_color>false</preserve_color>
     </philips_hue>
+    <artnet>
+        <enabled>true</enabled>
+        <framerate>30</framerate>
+        <devices>
+            <device>
+                <ip>192.168.1.100</ip>
+                <width_px>5</width_px>
+                <height_px>30</height_px>
+                <width_m>0.5</width_m>
+                <height_m>2.0</height_m>
+                <offest_x_m>0.0</offest_x_m>
+                <offest_y_m>0.0</offest_y_m>
+                <patch_mode>
+                    <snake>true</snake>
+                    <direction>vertical</direction>
+                    <start_x>right</start_x>
+                    <start_y>top</start_y>
+                </patch_mode>
+            </device>
+        </devices>
+    </artnet>
     <glsl>
         <window_width>800</window_width>
         <window_height>600</window_height>
         <framerate>60</framerate>
-        <shader>SpotifyTest.frag</shader>
+        <shader>gradient.frag</shader>
         <enabled>true</enabled>
-        <resolution>1024</resolution>
+        <resolution>30</resolution>
     </glsl>
     <gloutput>
         <framerate>60</framerate>
         <enabled>true</enabled>
-        <width>10</width>
-        <height>10</height>
+        <width>5</width>
+        <height>30</height>
         <zoom>20</zoom>
     </gloutput>
 </config>
