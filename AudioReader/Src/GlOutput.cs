@@ -49,7 +49,7 @@ namespace AudioReader
 
                 Log.Info(_tag, "Setting up renderer...");
                 
-                _compileShaders("Shader/GlslSandbox/" + Config.GetDefault("glsl/shader", "Spectrum.frag"));
+                _compileShaders();
                 _setupVBO();
 
                 Log.Info(_tag, "Renderer setup complete.");
@@ -99,7 +99,7 @@ namespace AudioReader
                 Log.Debug(_tag, "VBO setup complete.");
             }
 
-            private void _compileShaders(string fsPath)
+            private void _compileShaders()
             {
                 Log.Debug(_tag, "Setting up shader programs...");
 
