@@ -22,7 +22,7 @@ namespace AudioReader
     {
         #region HelperClasses
 
-        private delegate void SetupTextureSetEvent(object sender, EventArgs e);
+        private delegate void RunOnRenderThreadEvent(object sender, EventArgs e);
 
         private struct Vector2i
         {
@@ -89,7 +89,13 @@ namespace AudioReader
 
             ~ShaderProgram()
             {
-                GL.DeleteProgram(Id);
+                void CleanUpFunc(object sender, EventArgs args)
+                {
+                    GL.DeleteProgram(Id);
+                    ((GlslRenderer) sender)._runOnRenderThread -= CleanUpFunc;
+                }
+
+                Instance._runOnRenderThread += CleanUpFunc;
             }
 
             public void Reset()
@@ -191,7 +197,7 @@ namespace AudioReader
             public OutputTexture AddTextureSet(int resolutionX, int resolutionY, double offsetX = 0, double offsetY = 0, double sizeX = 1, double sizeY = 1)
             {
                 _textureSets.Add(new TextureSet(resolutionX, resolutionY, _shaders.Length, offsetX, offsetY, sizeX, sizeY));
-                _parent._setupTextureSets += _textureSets.Last().Setup;
+                _parent._runOnRenderThread += _textureSets.Last().Setup;
                 if (_textureSets.Count > 1)
                 {
                     Textures.Add(new OutputTexture() { Ready = false, Data = new byte[resolutionX * resolutionY * 3] });
@@ -230,6 +236,8 @@ namespace AudioReader
             }
 
             public uint GetDisplayTexture() => _textureSets[0].Textures.Last();
+
+            public void UpdateShader(string fsPath) => _setupShaders(new string[] { fsPath });
         }
 
         private class TextureSet
@@ -256,7 +264,7 @@ namespace AudioReader
             public void Setup(object sender, EventArgs e)
             {
                 Log.Debug(_tag, "Setting up TextureSet with resolution " + Resolution.X + "x" + Resolution.Y + ".");
-                ((GlslRenderer)sender)._setupTextureSets -= Setup;
+                ((GlslRenderer)sender)._runOnRenderThread -= Setup;
 
                 GL.GenFramebuffers(Buffers.Length, Buffers);
                 GL.GenTextures(Textures.Length, Textures);
@@ -321,7 +329,7 @@ namespace AudioReader
 
         #region Member
 
-        private event SetupTextureSetEvent _setupTextureSets;
+        private event RunOnRenderThreadEvent _runOnRenderThread;
         private uint _triangleArray;
         private uint _triangleBuffer;
         private ShaderProgram _screenProgram = new ShaderProgram();
@@ -342,6 +350,11 @@ namespace AudioReader
         private uint _albumArt;
         private List<Uniform> _uniforms;
         private Pipeline _pipeline;
+        // used for directly passing a new shader
+        private string _newShader;
+        // used for cycling through a list of shaders
+        private List<string> _shaderQueue = new List<string>();
+        private int _shaderIndex = 0;
 
         #endregion Member
 
@@ -411,7 +424,18 @@ namespace AudioReader
                 new Uniform("isPlaying", typeof(int), () => _isPlaying ? 1 : 0),
                 new Uniform("albumArt", typeof(uint), () => _albumArt)
             };
-            _pipeline = new Pipeline(this, "Shader/GlslSandbox/" + Config.GetDefault("glsl/shader", "Spectrum.frag"));
+
+            var index = 1;
+            while (Config.NodeExists("glsl/shaderQueue/shader[" + index + "]"))
+            {
+                _shaderQueue.Add(Config.GetDefault("glsl/shaderQueue/shader[" + index++ + "]", "Spectrum.frag"));
+            }
+            if(!_shaderQueue.Any())
+                _shaderQueue.Add("Spectrum.frag");
+
+            Log.Info(_tag, "Shader Queue: " + string.Join(" / ", _shaderQueue));
+
+            _pipeline = new Pipeline(this, "Shader/GlslSandbox/" + _shaderQueue.First());
 
             Log.Info(_tag, "Renderer setup complete.");
             Program.RendererSetUp.Set();
@@ -539,7 +563,14 @@ namespace AudioReader
             }
 
             // set up or clean up output textures
-            _setupTextureSets?.Invoke(this, EventArgs.Empty);
+            _runOnRenderThread?.Invoke(this, EventArgs.Empty);
+
+            // if new shaders are requested, update them
+            if (!string.IsNullOrEmpty(_newShader))
+            {
+                _pipeline.UpdateShader("Shader/GlslSandbox/" + _newShader);
+                _newShader = null;
+            }
 
             // draw to output textures
             _pipeline.Render();
@@ -574,20 +605,36 @@ namespace AudioReader
 
         private void _keyDown(object sender, KeyboardKeyEventArgs e)
         {
-            if (e.Key == Key.Escape)
-                Exit();
-
-            if (e.Key == Key.F11)
-                if (WindowState == WindowState.Fullscreen)
+            switch (e.Key)
+            {
+                case Key.Escape:
+                    Exit();
+                    break;
+                case Key.F11 when WindowState == WindowState.Fullscreen:
                     WindowState = WindowState.Normal;
-                else
+                    break;
+                case Key.F11:
                     WindowState = WindowState.Fullscreen;
-
-            if (e.Key == Key.Space)
-                if (_isPlaying)
+                    break;
+                case Key.Space when _isPlaying:
                     Spotify.Pause();
-                else
+                    break;
+                case Key.Space:
                     Spotify.Play();
+                    break;
+                case Key.N:
+                    _shaderIndex = (_shaderIndex + 1) % _shaderQueue.Count;
+                    _newShader = _shaderQueue[_shaderIndex];
+                    Log.Info(_tag, "New shader: " + _newShader);
+                    break;
+                case Key.P:
+                    _shaderIndex--;
+                    if (_shaderIndex < 0)
+                        _shaderIndex += _shaderQueue.Count;
+                    _newShader = _shaderQueue[_shaderIndex];
+                    Log.Info(_tag, "New shader: " + _newShader);
+                    break;
+            }
         }
 
         #endregion Events
