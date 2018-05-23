@@ -455,6 +455,8 @@ namespace AudioReader
 
         public OutputTexture RequestByteArray(int resolutionX, int resolutionY, double offsetX = 0, double offsetY = 0, double sizeX = 1, double sizeY = 1) => _pipeline.AddTextureSet(resolutionX, resolutionY, offsetX, offsetY, sizeX, sizeY);
 
+        public void UpdateShader(string fsName) => _newShader = fsName;
+
         #endregion Main
 
         #region Helper
