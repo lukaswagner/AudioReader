@@ -34,6 +34,9 @@
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AudioReader.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>AudioReader.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Bass.Net, Version=2.4.12.6, Culture=neutral, PublicKeyToken=b7566c273e6ef480, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -84,6 +87,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Src\ArtNetDevice.cs" />
     <Compile Include="Src\GlOutput.cs" />
+    <Compile Include="Src\HttpInterface.cs" />
     <Compile Include="Src\Spotify.cs" />
     <Compile Include="Src\ArtNetOutput.cs" />
     <Compile Include="Src\GlslRenderer.cs" />
@@ -96,6 +100,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="AudioReader.manifest">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="AudioReader.ruleset" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
