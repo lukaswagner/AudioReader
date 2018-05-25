@@ -49,6 +49,7 @@
         <framerate>60</framerate>
         <shaderQueue>
             <shader>gradient.frag</shader>
+            <shader>Fractal.frag</shader>
             <shader>SpotifyTest.frag</shader>
             <shader>Spectrum.frag</shader>
         </shaderQueue>

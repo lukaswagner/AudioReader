@@ -172,7 +172,7 @@ namespace AudioReader
                     };
                     _shaders[i].Use();
                     _shaders[i].CacheUniformLocations(_parent._uniforms.Select((uniform) => uniform.Name));
-                    _shaders[i].CacheUniformLocations("resolution");
+                    _shaders[i].CacheUniformLocations("resolution", "offset", "size");
                     _shaders[i].CacheAttributeLocations("position");
 
                     GL.BindVertexArray(_parent._triangleArray);
@@ -218,6 +218,8 @@ namespace AudioReader
                     {
                         var textureSet = _textureSets[textureIndex];
                         textureSet.ResolutionUniform.Apply(shader);
+                        textureSet.OffsetUniform.Apply(shader);
+                        textureSet.SizeUniform.Apply(shader);
 
                         GL.BindFramebuffer(FramebufferTarget.Framebuffer, textureSet.Buffers[shaderIndex]);
                         GL.Viewport(0, 0, textureSet.Resolution.X, textureSet.Resolution.Y);
@@ -246,6 +248,8 @@ namespace AudioReader
             public int[] Buffers { get; private set; }
             public uint[] Textures { get; private set; }
             public Uniform ResolutionUniform;
+            public Uniform OffsetUniform;
+            public Uniform SizeUniform;
             private Vector2 _offset;
             private Vector2 _size;
             public bool SetUp { get; private set; } = false;
@@ -256,7 +260,9 @@ namespace AudioReader
                 Resolution = new Vector2i(resolutionX, resolutionY);
                 ResolutionUniform = new Uniform("resolution", typeof(Vector2i), () => Resolution);
                 _offset = new Vector2((float)offsetX, (float)offsetY);
+                OffsetUniform = new Uniform("offset", typeof(Vector2), () => _offset);
                 _size = new Vector2((float)sizeX, (float)sizeY);
+                SizeUniform = new Uniform("size", typeof(Vector2), () => _size);
                 Buffers = new int[number];
                 Textures = new uint[number];
             }
