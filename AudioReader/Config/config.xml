@@ -23,7 +23,7 @@
         <preserve_color>false</preserve_color>
     </philips_hue>
     <artnet>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <framerate>30</framerate>
         <devices>
             <device>
@@ -47,9 +47,13 @@
         <window_width>800</window_width>
         <window_height>600</window_height>
         <framerate>60</framerate>
-        <shader>gradient.frag</shader>
+        <shaderQueue>
+            <shader>gradient.frag</shader>
+            <shader>SpotifyTest.frag</shader>
+            <shader>Spectrum.frag</shader>
+        </shaderQueue>
         <enabled>true</enabled>
-        <resolution>30</resolution>
+        <resolution>600</resolution>
     </glsl>
     <gloutput>
         <framerate>60</framerate>
