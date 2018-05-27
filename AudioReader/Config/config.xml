@@ -62,4 +62,8 @@
         <height>30</height>
         <zoom>20</zoom>
     </gloutput>
+    <httpInterface>
+        <enabled>true</enabled>
+        <port>8080</port>
+    </httpInterface>
 </config>

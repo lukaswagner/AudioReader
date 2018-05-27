@@ -39,14 +39,16 @@ namespace AudioReader
                 _hueController.TurnAllTheLightsOff();
             });
 
-            _checkEnabled("spotify", "Spotify integration", () => Spotify.Setup());
+            _checkEnabled("spotify", "Spotify integration", Spotify.Setup);
             
             _checkEnabled("glsl", "GLSL renderer", () => GlslRenderer.Enable(_reducedData));
 
             RendererSetUp.WaitOne();
 
-            _checkEnabled("artnet", "ArtNet output", () => ArtNetOutput.Enable());
-            _checkEnabled("gloutput", "OpenGL Output", () => GlOutput.Enable());
+            _checkEnabled("artnet", "ArtNet output", ArtNetOutput.Enable);
+            _checkEnabled("gloutput", "OpenGL Output", GlOutput.Enable);
+
+            _checkEnabled("httpInterface", "HTTP interface", HttpInterface.Enable);
 
             Log.Info("Main", "Everything set up.");
         }
