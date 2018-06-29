@@ -25,19 +25,36 @@
     <artnet>
         <enabled>false</enabled>
         <framerate>30</framerate>
+        <width_m>1.0</width_m>
+        <height_m>1.85</height_m>
         <devices>
             <device>
                 <ip>192.168.1.100</ip>
                 <width_px>5</width_px>
                 <height_px>30</height_px>
                 <width_m>0.5</width_m>
-                <height_m>2.0</height_m>
+                <height_m>1.85</height_m>
                 <offest_x_m>0.0</offest_x_m>
                 <offest_y_m>0.0</offest_y_m>
                 <patch_mode>
                     <snake>true</snake>
                     <direction>vertical</direction>
                     <start_x>right</start_x>
+                    <start_y>top</start_y>
+                </patch_mode>
+            </device>
+            <device>
+                <ip>192.168.1.101</ip>
+                <width_px>30</width_px>
+                <height_px>1</height_px>
+                <width_m>1.0</width_m>
+                <height_m>0.05</height_m>
+                <offest_x_m>0.0</offest_x_m>
+                <offest_y_m>0.0</offest_y_m>
+                <patch_mode>
+                    <snake>true</snake>
+                    <direction>horizontal</direction>
+                    <start_x>left</start_x>
                     <start_y>top</start_y>
                 </patch_mode>
             </device>

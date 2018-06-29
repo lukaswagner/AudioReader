@@ -42,6 +42,9 @@ namespace AudioReader
             s_artnet.EnableBroadcast = true;
             s_artnet.Open(lanAdress, IPAddress.Parse("255.255.255.0"));
 
+            Config.Get<double>("artnet/width_m", out var canvas_width_m);
+            Config.Get<double>("artnet/height_m", out var canvas_height_m);
+
             int i = 0;
             while(Config.NodeExists("artnet/devices/device[" + ++i + "]"))
             {
@@ -57,6 +60,8 @@ namespace AudioReader
 
                 devices.Add(new ArtNetDevice(
                     ip,
+                    canvas_width_m,
+                    canvas_height_m,
                     width_px,
                     height_px,
                     width_m,
