@@ -4,17 +4,17 @@
         <level>Debug</level>
     </log>
     <audio>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <list_inputs>true</list_inputs>
-        <device>1</device>
+        <device>9</device>
         <arraysize>2048</arraysize>
         <reduced_arraysize>1024</reduced_arraysize>
     </audio>
     <spotify>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
     </spotify>
     <beatdetection>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <framerate>60</framerate>
     </beatdetection>
     <philips_hue>
@@ -23,7 +23,7 @@
         <preserve_color>false</preserve_color>
     </philips_hue>
     <artnet>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
         <framerate>30</framerate>
         <devices>
             <device>
@@ -44,26 +44,31 @@
         </devices>
     </artnet>
     <glsl>
-        <window_width>800</window_width>
-        <window_height>600</window_height>
+        <window_width>50</window_width>
+        <window_height>300</window_height>
         <framerate>60</framerate>
         <shaderQueue>
-            <shader>gradient.frag</shader>
-            <shader>SpotifyTest.frag</shader>
-            <shader>Spectrum.frag</shader>
+            <shader>Fire.frag</shader>
+            <shader>off.frag</shader>
+            <shader>Nachtlicht.frag</shader>
+            <shader>Gedimmt.frag</shader>
+            <shader>Nordlichter.frag</shader>
+            <shader>Miami.frag</shader>
+            <shader>Bunt.frag</shader>
+            <shader>Konzentration.frag</shader>
         </shaderQueue>
         <enabled>true</enabled>
         <resolution>600</resolution>
     </glsl>
     <gloutput>
         <framerate>60</framerate>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <width>5</width>
         <height>30</height>
         <zoom>20</zoom>
     </gloutput>
     <httpInterface>
         <enabled>true</enabled>
-        <port>8080</port>
+        <port>65037</port>
     </httpInterface>
 </config>
