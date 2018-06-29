@@ -9,6 +9,9 @@
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
+uniform vec2 offset;
+uniform vec2 size;
+varying vec2 texcoord;
 layout(location = 0) out vec4 color;
 
 
@@ -19,8 +22,8 @@ vec3 hsv2rgb(vec3 c) {
 }
 	
 void main( void ) {
-
-	vec2 p = ( gl_FragCoord.xy - resolution.xy/2.0)/ resolution.y*4.0;
+	vec2 newPos = (texcoord * size + offset) * resolution;
+	vec2 p = ( newPos - resolution.xy/2.0)/ resolution.y*4.0;
 	
 	//vec2 c = vec2(5*cosh(time/2.0), 0.7885*sin(time/2.0));
 	vec2 c = (mouse-vec2(0.5))*2.0;
