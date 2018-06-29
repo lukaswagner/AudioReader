@@ -24,9 +24,10 @@ namespace AudioReader
 
         public ArtNetDevice(
             string ip,
-            double canvas_width_px, double canvas_height_px,
+            double canvas_width_m, double canvas_height_m,
             uint width_px, uint height_px,
             float width_m, float height_m,
+            float offset_x_m, float offset_y_m,
             bool snake, bool vertical, bool startRight, bool startBottom)
         {
             _width_px = width_px;
@@ -45,7 +46,14 @@ namespace AudioReader
             }
             _endPoint = new IPEndPoint(ipLong, 6454);
 
-            _textureByteArray = GlslRenderer.Instance.RequestByteArray((int)width_px, (int)height_px, 0, 0, width_m/canvas_width_px, height_m/canvas_height_px);
+            _textureByteArray = GlslRenderer.Instance.RequestByteArray(
+                    (int)width_px,
+                    (int)height_px,
+                    offset_x_m / canvas_width_m,
+                    offset_y_m / canvas_height_m,
+                    width_m / canvas_width_m,
+                    height_m / canvas_height_m
+                );
             _ledIds = _generateLedIDs(width_px, height_px, startRight, startBottom, vertical, snake);
         }
 

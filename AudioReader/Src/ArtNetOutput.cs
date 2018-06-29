@@ -53,6 +53,8 @@ namespace AudioReader
                 Config.Get<uint>(  "artnet/devices/device[" + i + "]/height_px", out var height_px);
                 Config.Get<float>( "artnet/devices/device[" + i + "]/width_m", out var width_m);
                 Config.Get<float>( "artnet/devices/device[" + i + "]/height_m", out var height_m);
+                Config.Get<float>( "artnet/devices/device[" + i + "]/offset_x_m", out var offset_x_m);
+                Config.Get<float>( "artnet/devices/device[" + i + "]/offset_y_m", out var offset_y_m);
                 Config.Get<bool>(  "artnet/devices/device[" + i + "]/patch_mode/snake", out var snake);
                 Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/direction", out var direction);
                 Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/start_x", out var start_x);
@@ -66,6 +68,8 @@ namespace AudioReader
                     height_px,
                     width_m,
                     height_m,
+                    offset_x_m,
+                    offset_y_m,
                     snake,
                     direction == "vertical",
                     start_x == "right",

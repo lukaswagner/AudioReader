@@ -34,8 +34,8 @@
                 <height_px>30</height_px>
                 <width_m>0.5</width_m>
                 <height_m>1.85</height_m>
-                <offest_x_m>0.0</offest_x_m>
-                <offest_y_m>0.0</offest_y_m>
+                <offset_x_m>0.25</offset_x_m>
+                <offset_y_m>0.0</offset_y_m>
                 <patch_mode>
                     <snake>true</snake>
                     <direction>vertical</direction>
@@ -49,8 +49,8 @@
                 <height_px>1</height_px>
                 <width_m>1.0</width_m>
                 <height_m>0.05</height_m>
-                <offest_x_m>0.0</offest_x_m>
-                <offest_y_m>0.0</offest_y_m>
+                <offset_x_m>0.0</offset_x_m>
+                <offset_y_m>0.0</offset_y_m>
                 <patch_mode>
                     <snake>true</snake>
                     <direction>horizontal</direction>
