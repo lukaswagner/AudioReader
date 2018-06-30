@@ -1,6 +1,8 @@
 #version 330 core
 
 uniform float time;
+uniform vec2 offset;
+uniform vec2 size;
 varying vec2 texcoord;
 layout(location = 0) out vec4 color;
 
@@ -106,7 +108,7 @@ float map( float value, float inMin, float inMax, float outMin, float outMax )
 
 void main(void )
 {
-	vec2 uv = texcoord;
+	vec2 uv = (texcoord * size + offset) * vec2(2.0, 1.0);
     vec2 q = uv * vec2(0.1, 0.5);
     q *= 10.;
     float t = time * 0.0002;
@@ -118,8 +120,8 @@ void main(void )
     
     vec3 hsv = vec3(
         map(n, 0.0, 1.0, 0.0, 0.15),
-        map(n, 0.0, 1.0, 2.5, 0.5),
-        map(n, 0.0, 1.0, 0.0, 0.8)        
+        map(n, 0.0, 1.0, 2.5, 0.7),
+        map(n, 0.0, 1.0, 0.0, 0.7)        
     );
 
     color=vec4( vec3(n), 1.0 );

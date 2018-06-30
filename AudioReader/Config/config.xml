@@ -50,7 +50,7 @@
                 <width_m>1.0</width_m>
                 <height_m>0.05</height_m>
                 <offset_x_m>0.0</offset_x_m>
-                <offset_y_m>0.0</offset_y_m>
+                <offset_y_m>1.0</offset_y_m>
                 <patch_mode>
                     <snake>true</snake>
                     <direction>horizontal</direction>
@@ -65,7 +65,7 @@
         <window_height>300</window_height>
         <framerate>60</framerate>
         <shaderQueue>
-            <shader>Fire.frag</shader>
+            <shader>Lagerfeuer.frag</shader>
             <shader>off.frag</shader>
             <shader>Nachtlicht.frag</shader>
             <shader>Gedimmt.frag</shader>

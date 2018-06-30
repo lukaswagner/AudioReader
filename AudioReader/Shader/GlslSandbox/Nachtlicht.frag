@@ -1,6 +1,8 @@
 #version 330 core
 
 uniform float time;
+uniform vec2 offset;
+uniform vec2 size;
 varying vec2 texcoord;
 layout(location = 0) out vec4 color;
 
@@ -62,7 +64,7 @@ float turb( in vec2 uv )
 // -----------------------------------------------
 
 void main( void ) {
-    vec2 uv = texcoord * vec2(0.15, 1.8);
+    vec2 uv = (texcoord * size + offset) * vec2(0.36, 1.8);
     float f = turb( 5.*uv ) * 1.5 + 0.3;
     f = clamp(f, 0.0, 1.0);
     f = smoothstep(0.6, 0.8, f);
