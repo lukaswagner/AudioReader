@@ -4,17 +4,17 @@
         <level>Debug</level>
     </log>
     <audio>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
         <list_inputs>true</list_inputs>
-        <device>9</device>
+        <device>51</device>
         <arraysize>2048</arraysize>
-        <reduced_arraysize>1024</reduced_arraysize>
+        <reduced_arraysize>512</reduced_arraysize>
     </audio>
     <spotify>
         <enabled>false</enabled>
     </spotify>
     <beatdetection>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
         <framerate>60</framerate>
     </beatdetection>
     <philips_hue>
@@ -40,7 +40,7 @@
                     <snake>true</snake>
                     <direction>vertical</direction>
                     <start_x>right</start_x>
-                    <start_y>top</start_y>
+                    <start_y>bottom</start_y>
                 </patch_mode>
             </device>
             <device>
@@ -49,6 +49,36 @@
                 <height_px>1</height_px>
                 <width_m>1.0</width_m>
                 <height_m>0.05</height_m>
+                <offset_x_m>0.0</offset_x_m>
+                <offset_y_m>1.0</offset_y_m>
+                <patch_mode>
+                    <snake>true</snake>
+                    <direction>horizontal</direction>
+                    <start_x>left</start_x>
+                    <start_y>top</start_y>
+                </patch_mode>
+            </device>
+            <device>
+                <ip>192.168.1.103</ip>
+                <width_px>25</width_px>
+                <height_px>2</height_px>
+                <width_m>0.75</width_m>
+                <height_m>0.35</height_m>
+                <offset_x_m>0.0</offset_x_m>
+                <offset_y_m>1.0</offset_y_m>
+                <patch_mode>
+                    <snake>true</snake>
+                    <direction>horizontal</direction>
+                    <start_x>right</start_x>
+                    <start_y>top</start_y>
+                </patch_mode>
+            </device>
+            <device>
+                <ip>192.168.1.104</ip>
+                <width_px>92</width_px>
+                <height_px>1</height_px>
+                <width_m>1.50</width_m>
+                <height_m>0.3</height_m>
                 <offset_x_m>0.0</offset_x_m>
                 <offset_y_m>1.0</offset_y_m>
                 <patch_mode>

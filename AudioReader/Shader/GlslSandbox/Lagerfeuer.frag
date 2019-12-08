@@ -111,7 +111,7 @@ void main(void )
 	vec2 uv = (texcoord * size + offset) * vec2(2.0, 1.0);
     vec2 q = uv * vec2(0.1, 0.5);
     q *= 10.;
-    float t = time * 0.0002;
+    float t = time * (size.y > 0.5 ? 0.0002 : 0.00002);
     q.y += -7.0 * t;
     
     float n = fbm(vec3(q, t)) * 1.4;

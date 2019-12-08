@@ -13,5 +13,5 @@ void main()
     vec2 newPos = texcoord * size + offset;
     int pos = int(clamp(newPos.x * ArraySize, 0.0, ArraySize - 1.0));
     float value = audioData[pos];
-    color = value*50 > newPos.y ? vec4(vec3(1.0), 1.0) : vec4(vec3(0.0), 1.0);
+    color = value*500 > newPos.y ? vec4(vec3(1.0), 1.0) : vec4(vec3(0.0), 1.0);
 }
