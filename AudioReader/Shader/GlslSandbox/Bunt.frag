@@ -1,6 +1,7 @@
 #version 330 core
 
 uniform float time;
+uniform vec2 resolution;
 uniform vec2 offset;
 uniform vec2 size;
 varying vec2 texcoord;
@@ -63,21 +64,15 @@ float turb( in vec2 uv )
 }
 // -----------------------------------------------
 
+vec4 effect(vec2 uv, vec2 resolution) {
+    vec2 scaledUv = (uv * size) * 0.3;
+    float f = turb( 5.*scaledUv ) * 1.5 + 0.5;
+    f = clamp(f, 0.0, 1.0);
+    vec3 hsv = vec3(f, 1.0, 1.0);
+    vec3 rgb = hsv2rgb(hsv);
+    return vec4(rgb, 1.0);
+}
+
 void main( void ) {
-	
-  vec2 uv = (texcoord * size + offset) * vec2(0.12, 0.6);
-  color = vec4(uv, 0.0, 1.0);
-	float f; 
-  f = Mnoise( 5.*uv );
-	color = vec4(vec3(f), 1.0);
-  f = turb( 5.*uv ) * 1.5 + 0.5;
-  f = clamp(f, 0.0, 1.0);
-  //f = map(f, 0.0, 1.0, 0.45, 0.73);
-	color = vec4(vec3(f), 1.0);
-  vec3 c = mix(vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 1.0), f);
-  vec3 hsv = vec3(f, 1.0, 1.0);
-  vec3 rgb = hsv2rgb(hsv);
-  color = vec4(rgb, 1.0);
-  //color = vec4(.5 + .5* f);
-  //color = mix(vec4(0,0,.3,1),vec4(1.3),gl_FragColor); 
+    color = effect(texcoord, resolution);
 }

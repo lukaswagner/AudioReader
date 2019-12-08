@@ -9,9 +9,11 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Timers;
 
 namespace AudioReader
 {
+    using System.Timers;
     internal class OutputTexture
     {
         public bool Ready;
@@ -362,6 +364,8 @@ namespace AudioReader
         private List<string> _shaderQueue = new List<string>();
         private int _shaderIndex = 0;
 
+        private Timer _timer;
+
         #endregion Member
 
         #region Main
@@ -407,6 +411,15 @@ namespace AudioReader
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
+
+            if (Config.NodeExists("glsl/cycleTime"))
+            {
+                Config.Get<int>("glsl/cycleTime", out var cycleTime);
+                _timer = new Timer(cycleTime);
+                _timer.Enabled = true;
+                _timer.Elapsed += new ElapsedEventHandler(OnTimerEvent);
+            }
+
         }
 
         protected override void OnLoad(EventArgs e)
@@ -631,18 +644,32 @@ namespace AudioReader
                     Spotify.Play();
                     break;
                 case Key.N:
-                    _shaderIndex = (_shaderIndex + 1) % _shaderQueue.Count;
-                    _newShader = _shaderQueue[_shaderIndex];
-                    Log.Info(_tag, "New shader: " + _newShader);
+                    _nextShader();
                     break;
                 case Key.P:
-                    _shaderIndex--;
-                    if (_shaderIndex < 0)
-                        _shaderIndex += _shaderQueue.Count;
-                    _newShader = _shaderQueue[_shaderIndex];
-                    Log.Info(_tag, "New shader: " + _newShader);
+                    _previousShader();
                     break;
             }
+        }
+        private void OnTimerEvent(object sender, EventArgs e)
+        {
+            _nextShader();
+        }
+
+        private void _nextShader()
+        {
+            _shaderIndex = (_shaderIndex + 1) % _shaderQueue.Count;
+            _newShader = _shaderQueue[_shaderIndex];
+            Log.Info(_tag, "New shader: " + _newShader);
+        }
+
+        private void _previousShader()
+        {
+            _shaderIndex--;
+            if (_shaderIndex < 0)
+                _shaderIndex += _shaderQueue.Count;
+            _newShader = _shaderQueue[_shaderIndex];
+            Log.Info(_tag, "New shader: " + _newShader);
         }
 
         #endregion Events

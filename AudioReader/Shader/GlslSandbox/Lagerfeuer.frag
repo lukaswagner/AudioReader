@@ -3,6 +3,7 @@
 uniform float time;
 uniform vec2 offset;
 uniform vec2 size;
+uniform vec2 resolution;
 varying vec2 texcoord;
 layout(location = 0) out vec4 color;
 
@@ -106,12 +107,11 @@ float map( float value, float inMin, float inMax, float outMin, float outMax )
     return ( (value - inMin) / ( inMax - inMin ) * ( outMax - outMin ) ) + outMin; 
 }
 
-void main(void )
-{
-	vec2 uv = (texcoord * size + offset) * vec2(2.0, 1.0);
+vec4 effect(vec2 texcoord, vec2 resolution) {
+    vec2 uv = texcoord * resolution * vec2(0.2, 0.03);
     vec2 q = uv * vec2(0.1, 0.5);
     q *= 10.;
-    float t = time * (size.y > 0.5 ? 0.0002 : 0.00002);
+    float t = time * 0.0002;
     q.y += -7.0 * t;
     
     float n = fbm(vec3(q, t)) * 1.4;
@@ -121,10 +121,16 @@ void main(void )
     vec3 hsv = vec3(
         map(n, 0.0, 1.0, 0.0, 0.15),
         map(n, 0.0, 1.0, 2.5, 0.7),
-        map(n, 0.0, 1.0, 0.0, 0.7)        
+        map(n, 0.0, 1.0, 0.0, 0.7)
     );
 
-    color=vec4( vec3(n), 1.0 );
-    color=vec4( hsv2rgb(hsv), 1.0 );
+    vec4 color = vec4(vec3(n), 1.0);
+    color = vec4(hsv2rgb(hsv), 1.0);
+    return color;
+}
+
+void main(void )
+{
+    color = effect(texcoord, resolution);
 }
 
