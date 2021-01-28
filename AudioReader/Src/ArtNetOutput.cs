@@ -42,6 +42,9 @@ namespace AudioReader
             s_artnet.EnableBroadcast = true;
             s_artnet.Open(lanAdress, IPAddress.Parse("255.255.255.0"));
 
+            Config.Get<double>("artnet/width_m", out var canvas_width_m);
+            Config.Get<double>("artnet/height_m", out var canvas_height_m);
+
             int i = 0;
             while(Config.NodeExists("artnet/devices/device[" + ++i + "]"))
             {
@@ -50,6 +53,8 @@ namespace AudioReader
                 Config.Get<uint>(  "artnet/devices/device[" + i + "]/height_px", out var height_px);
                 Config.Get<float>( "artnet/devices/device[" + i + "]/width_m", out var width_m);
                 Config.Get<float>( "artnet/devices/device[" + i + "]/height_m", out var height_m);
+                Config.Get<float>( "artnet/devices/device[" + i + "]/offset_x_m", out var offset_x_m);
+                Config.Get<float>( "artnet/devices/device[" + i + "]/offset_y_m", out var offset_y_m);
                 Config.Get<bool>(  "artnet/devices/device[" + i + "]/patch_mode/snake", out var snake);
                 Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/direction", out var direction);
                 Config.Get<string>("artnet/devices/device[" + i + "]/patch_mode/start_x", out var start_x);
@@ -57,10 +62,14 @@ namespace AudioReader
 
                 devices.Add(new ArtNetDevice(
                     ip,
+                    canvas_width_m,
+                    canvas_height_m,
                     width_px,
                     height_px,
                     width_m,
                     height_m,
+                    offset_x_m,
+                    offset_y_m,
                     snake,
                     direction == "vertical",
                     start_x == "right",
